@@ -16,6 +16,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!auth) {
+        setLoading(false);
+        return;
+    }
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setLoading(false);
@@ -37,6 +41,9 @@ export const useAuth = () => {
 
 export const loginWithGoogle = async () => {
   try {
+    if (!auth || !googleProvider) {
+        throw new Error("Firebase not initialized");
+    }
     await signInWithPopup(auth, googleProvider);
   } catch (error) {
     console.error("Error logging in with Google: ", error);
@@ -45,6 +52,9 @@ export const loginWithGoogle = async () => {
 
 export const logout = async () => {
   try {
+    if (!auth) {
+        throw new Error("Firebase not initialized");
+    }
     await signOut(auth);
   } catch (error)
   {

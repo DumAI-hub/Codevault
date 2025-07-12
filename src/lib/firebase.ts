@@ -11,18 +11,14 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-let app: FirebaseApp;
-let auth: Auth;
-let googleProvider: GoogleAuthProvider;
+let app: FirebaseApp | undefined;
+let auth: Auth | undefined;
+let googleProvider: GoogleAuthProvider | undefined;
 
-//
-// We only want to initialize firebase on the client side.
-//
-if (typeof window !== "undefined") {
+if (typeof window !== "undefined" && firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_API_KEY") {
   app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
   auth = getAuth(app);
   googleProvider = new GoogleAuthProvider();
 }
 
-// @ts-ignore
-export { auth, googleProvider };
+export { app, auth, googleProvider };
