@@ -40,10 +40,11 @@ export const useAuth = () => {
 };
 
 export const loginWithGoogle = async () => {
+  if (!auth || !googleProvider) {
+    console.error("Firebase is not configured. Please add your credentials to .env to enable authentication.");
+    return;
+  }
   try {
-    if (!auth || !googleProvider) {
-        throw new Error("Firebase not initialized");
-    }
     await signInWithPopup(auth, googleProvider);
   } catch (error) {
     console.error("Error logging in with Google: ", error);
@@ -51,10 +52,11 @@ export const loginWithGoogle = async () => {
 };
 
 export const logout = async () => {
+  if (!auth) {
+    console.error("Firebase is not configured. Please add your credentials to .env to enable authentication.");
+    return;
+  }
   try {
-    if (!auth) {
-        throw new Error("Firebase not initialized");
-    }
     await signOut(auth);
   } catch (error)
   {
