@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { summarizeProjectDescription } from "@/ai/flows/summarize-project-description";
+import { summarizeGithubRepo } from "@/ai/flows/summarize-github-repo";
 import type { Project } from "./types";
 import { projectSchema } from "./types";
 
@@ -15,7 +16,7 @@ const projectsDb: Project[] = [
         techStack: "Next.js,React,Tailwind CSS,TypeScript",
         domain: "Web Development",
         batchYear: 2024,
-        githubLink: "https://github.com/",
+        githubLink: "https://github.com/firebase/firebase-ios-sdk",
         demoLink: "https://github.com/",
         summary: "A personal portfolio website using Next.js and Tailwind CSS to showcase projects, featuring a clean, responsive design with smooth animations."
     },
@@ -26,7 +27,7 @@ const projectsDb: Project[] = [
         techStack: "React,Node.js,MongoDB,Express,Stripe",
         domain: "Web Development",
         batchYear: 2023,
-        githubLink: "https://github.com/",
+        githubLink: "https://github.com/vercel/next.js",
         summary: "A full-stack MERN e-commerce site with user authentication, a product catalog, and Stripe payment integration, using Redux for state management."
     },
     {
@@ -36,7 +37,7 @@ const projectsDb: Project[] = [
         techStack: "Kotlin,Android,Firebase",
         domain: "Mobile Development",
         batchYear: 2024,
-        githubLink: "https://github.com/",
+        githubLink: "https://github.com/google/genkit",
         summary: "An Android app built with Kotlin and Firebase that allows patients to book appointments, chat with doctors in real-time, and manage medical records."
     },
     {
@@ -46,7 +47,7 @@ const projectsDb: Project[] = [
         techStack: "Python,Flask,Scikit-learn,Machine Learning",
         domain: "Machine Learning",
         batchYear: 2023,
-        githubLink: "https://github.com/",
+        githubLink: "https://github.com/tensorflow/tensorflow",
         demoLink: "https://github.com/",
         summary: "A Python-based machine learning project that analyzes movie review sentiment using Scikit-learn and NLTK, deployed as a Flask web application."
     },
@@ -55,6 +56,10 @@ const projectsDb: Project[] = [
 export async function getProjects(): Promise<Project[]> {
     // In a real app, you would fetch from your database.
     return Promise.resolve(projectsDb);
+}
+
+export async function getProjectById(id: string): Promise<Project | undefined> {
+    return Promise.resolve(projectsDb.find(p => p.id === id));
 }
 
 export async function addProject(data: Omit<Project, 'id' | 'summary'>) {
@@ -83,5 +88,19 @@ export async function addProject(data: Omit<Project, 'id' | 'summary'>) {
     } catch (error) {
         console.error(error);
         return { success: false, error: "Failed to create project summary." };
+    }
+}
+
+export async function getGithubSummary(githubLink: string) {
+    if (!githubLink) {
+        return { success: false, error: "No GitHub link provided." };
+    }
+
+    try {
+        const result = await summarizeGithubRepo({ githubLink });
+        return { success: true, data: result };
+    } catch (error) {
+        console.error(error);
+        return { success: false, error: "Failed to get summary from GitHub." };
     }
 }

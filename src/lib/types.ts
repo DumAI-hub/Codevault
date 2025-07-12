@@ -7,7 +7,7 @@ export const projectSchema = z.object({
   techStack: z.string().min(1, "Please provide at least one technology, separated by commas"),
   domain: z.string().min(1, "Please specify a domain"),
   batchYear: z.coerce.number().min(2000, "Invalid year").max(new Date().getFullYear() + 1, "Year cannot be too far in the future"),
-  githubLink: z.string().url("Please enter a valid URL").optional().or(z.literal('')),
+  githubLink: z.string().url("Please enter a valid GitHub URL").optional().or(z.literal('')),
   demoLink: z.string().url("Please enter a valid URL").optional().or(z.literal('')),
   summary: z.string().optional(),
 });
