@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { onAuthStateChanged, signInWithPopup, signOut, type User, type AuthError } from 'firebase/auth';
 import { auth, googleProvider } from '@/lib/firebase';
-import { useToast } from './use-toast';
+import { toast } from './use-toast';
 
 interface AuthContextType {
   user: User | null;
@@ -41,7 +41,6 @@ export const useAuth = () => {
 };
 
 export const loginWithGoogle = async () => {
-  const { toast } = useToast();
   if (!auth || !googleProvider) {
     console.error("Firebase is not configured. Please add your credentials to .env to enable authentication.");
     toast({
