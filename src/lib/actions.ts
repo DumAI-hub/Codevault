@@ -1,0 +1,87 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { summarizeProjectDescription } from "@/ai/flows/summarize-project-description";
+import type { Project } from "./types";
+import { projectSchema } from "./types";
+
+// This is a mock database. In a real application, you would use a database
+// like Firestore, PostgreSQL, etc.
+const projectsDb: Project[] = [
+    {
+        id: "1",
+        title: "Portfolio Website V2",
+        description: "A personal portfolio website built with Next.js and Tailwind CSS to showcase my projects and skills. It features a clean design, smooth animations, and is fully responsive. It is deployed on Vercel.",
+        techStack: "Next.js,React,Tailwind CSS,TypeScript",
+        domain: "Web Development",
+        batchYear: 2024,
+        githubLink: "https://github.com/",
+        demoLink: "https://github.com/",
+        summary: "A personal portfolio website using Next.js and Tailwind CSS to showcase projects, featuring a clean, responsive design with smooth animations."
+    },
+    {
+        id: "2",
+        title: "E-commerce Platform",
+        description: "A full-stack e-commerce platform developed using the MERN stack (MongoDB, Express, React, Node.js). It includes features like user authentication, product catalog, shopping cart, and Stripe integration for payments. The state is managed with Redux.",
+        techStack: "React,Node.js,MongoDB,Express,Stripe",
+        domain: "Web Development",
+        batchYear: 2023,
+        githubLink: "https://github.com/",
+        summary: "A full-stack MERN e-commerce site with user authentication, a product catalog, and Stripe payment integration, using Redux for state management."
+    },
+    {
+        id: "3",
+        title: "HealthConnect Mobile App",
+        description: "An Android application developed with Kotlin that connects patients with doctors. The app uses Firebase for real-time chat, authentication, and database. It helps users book appointments and manage their medical records.",
+        techStack: "Kotlin,Android,Firebase",
+        domain: "Mobile Development",
+        batchYear: 2024,
+        githubLink: "https://github.com/",
+        summary: "An Android app built with Kotlin and Firebase that allows patients to book appointments, chat with doctors in real-time, and manage medical records."
+    },
+    {
+        id: "4",
+        title: "Sentiment Analysis of Movie Reviews",
+        description: "A machine learning project that performs sentiment analysis on a dataset of movie reviews. Built with Python using Scikit-learn and NLTK for natural language processing. The model is deployed as a simple web app using Flask.",
+        techStack: "Python,Flask,Scikit-learn,Machine Learning",
+        domain: "Machine Learning",
+        batchYear: 2023,
+        githubLink: "https://github.com/",
+        demoLink: "https://github.com/",
+        summary: "A Python-based machine learning project that analyzes movie review sentiment using Scikit-learn and NLTK, deployed as a Flask web application."
+    },
+];
+
+export async function getProjects(): Promise<Project[]> {
+    // In a real app, you would fetch from your database.
+    return Promise.resolve(projectsDb);
+}
+
+export async function addProject(data: Omit<Project, 'id' | 'summary'>) {
+    const validatedData = projectSchema.safeParse(data);
+    if (!validatedData.success) {
+        return { success: false, error: "Invalid data" };
+    }
+    
+    try {
+        const { summary } = await summarizeProjectDescription({
+            projectDescription: validatedData.data.description,
+        });
+
+        const newProject: Project = {
+            id: new Date().getTime().toString(),
+            ...validatedData.data,
+            summary,
+        };
+
+        // In a real app, you would save to your database.
+        projectsDb.unshift(newProject);
+        
+        revalidatePath("/");
+        
+        return { success: true };
+    } catch (error) {
+        console.error(error);
+        return { success: false, error: "Failed to create project summary." };
+    }
+}
