@@ -1,8 +1,9 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { onAuthStateChanged, signInWithPopup, signOut, type User } from 'firebase/auth';
+import { onAuthStateChanged, signInWithPopup, signOut, type User, type AuthError } from 'firebase/auth';
 import { auth, googleProvider } from '@/lib/firebase';
+import { useToast } from './use-toast';
 
 interface AuthContextType {
   user: User | null;
@@ -40,14 +41,34 @@ export const useAuth = () => {
 };
 
 export const loginWithGoogle = async () => {
+  const { toast } = useToast();
   if (!auth || !googleProvider) {
     console.error("Firebase is not configured. Please add your credentials to .env to enable authentication.");
+    toast({
+        title: "Login Unavailable",
+        description: "Authentication is not configured. Please check the setup.",
+        variant: "destructive",
+    });
     return;
   }
   try {
     await signInWithPopup(auth, googleProvider);
   } catch (error) {
-    console.error("Error logging in with Google: ", error);
+    const authError = error as AuthError;
+    if (authError.code === 'auth/popup-closed-by-user') {
+        toast({
+            title: "Login Canceled",
+            description: "The sign-in popup was closed. Please check your browser's popup blocker and try again.",
+            variant: "destructive",
+        });
+    } else {
+        console.error("Error logging in with Google: ", authError);
+        toast({
+            title: "Login Failed",
+            description: "An unexpected error occurred during login. Please try again.",
+            variant: "destructive",
+        });
+    }
   }
 };
 
