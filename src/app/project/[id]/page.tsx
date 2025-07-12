@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Github, Link as LinkIcon, CalendarDays, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { GithubSummary } from "@/components/GithubSummary";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ReputationManager } from "@/components/ReputationManager";
 
 export default async function ProjectDetailsPage({ params }: { params: { id: string } }) {
   const project = await getProjectById(params.id);
@@ -59,27 +61,47 @@ export default async function ProjectDetailsPage({ params }: { params: { id: str
 
           </div>
 
-          <div className="md:col-span-1 space-y-4">
-              <h3 className="font-semibold text-lg">Project Links</h3>
-              <div className="flex flex-col gap-3">
-                 {project.githubLink && (
-                    <Button variant="outline" asChild className="justify-start">
-                        <a href={project.githubLink} target="_blank" rel="noopener noreferrer">
-                            <Github className="mr-2 h-4 w-4" />
-                            View on GitHub
-                        </a>
-                    </Button>
-                )}
-                 {project.demoLink && (
-                    <Button variant="outline" asChild className="justify-start">
-                        <a href={project.demoLink} target="_blank" rel="noopener noreferrer">
-                            <LinkIcon className="mr-2 h-4 w-4" />
-                            View Live Demo
-                        </a>
-                    </Button>
-                )}
-              </div>
-          </div>
+          <aside className="md:col-span-1 space-y-6">
+             <Card>
+                <CardHeader>
+                    <CardTitle className="text-lg">Author</CardTitle>
+                </CardHeader>
+                <CardContent className="flex items-center gap-4">
+                    <Avatar>
+                        <AvatarImage src={project.authorPhotoURL} alt={project.authorName} />
+                        <AvatarFallback>{project.authorName.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div className="text-sm">
+                        <div className="font-semibold">{project.authorName}</div>
+                        <div className="text-muted-foreground">Reputation: {project.reputation || 0}</div>
+                    </div>
+                </CardContent>
+             </Card>
+
+             <ReputationManager projectId={project.id!} />
+
+             <div>
+                <h3 className="font-semibold text-lg mb-4">Project Links</h3>
+                <div className="flex flex-col gap-3">
+                    {project.githubLink && (
+                        <Button variant="outline" asChild className="justify-start">
+                            <a href={project.githubLink} target="_blank" rel="noopener noreferrer">
+                                <Github className="mr-2 h-4 w-4" />
+                                View on GitHub
+                            </a>
+                        </Button>
+                    )}
+                    {project.demoLink && (
+                        <Button variant="outline" asChild className="justify-start">
+                            <a href={project.demoLink} target="_blank" rel="noopener noreferrer">
+                                <LinkIcon className="mr-2 h-4 w-4" />
+                                View Live Demo
+                            </a>
+                        </Button>
+                    )}
+                </div>
+             </div>
+          </aside>
         </div>
       </main>
     </>

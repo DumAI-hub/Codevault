@@ -13,14 +13,25 @@ import { useToast } from "@/hooks/use-toast";
 import { projectSchema, type Project } from "@/lib/types";
 import { addProject } from "@/lib/actions";
 import { Loader2 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+
+type ProjectFormData = Omit<Project, 'id' | 'summary' | 'authorId' | 'authorName' | 'authorPhotoURL' | 'reputation'>;
 
 export function ProjectForm() {
   const router = useRouter();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
+  const { user } = useAuth();
 
-  const form = useForm<Omit<Project, 'id' | 'summary'>>({
-    resolver: zodResolver(projectSchema.omit({ id: true, summary: true})),
+  const form = useForm<ProjectFormData>({
+    resolver: zodResolver(projectSchema.omit({ 
+        id: true, 
+        summary: true, 
+        authorId: true,
+        authorName: true,
+        authorPhotoURL: true,
+        reputation: true,
+    })),
     defaultValues: {
       title: "",
       description: "",
@@ -32,9 +43,18 @@ export function ProjectForm() {
     },
   });
 
-  function onSubmit(values: Omit<Project, 'id' | 'summary'>) {
+  function onSubmit(values: ProjectFormData) {
+    if (!user) {
+        toast({
+            title: "Authentication Required",
+            description: "You must be logged in to submit a project.",
+            variant: "destructive",
+        });
+        return;
+    }
+
     startTransition(async () => {
-      const result = await addProject(values);
+      const result = await addProject(values, user);
       if (result.success) {
         toast({
           title: "Project Submitted!",
@@ -159,7 +179,7 @@ export function ProjectForm() {
         </div>
 
 
-        <Button type="submit" disabled={isPending} className="w-full md:w-auto">
+        <Button type="submit" disabled={isPending || !user} className="w-full md:w-auto">
           {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {isPending ? "Submitting..." : "Submit Project"}
         </Button>

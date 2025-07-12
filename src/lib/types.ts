@@ -10,6 +10,19 @@ export const projectSchema = z.object({
   githubLink: z.string().url("Please enter a valid GitHub URL").optional().or(z.literal('')),
   demoLink: z.string().url("Please enter a valid URL").optional().or(z.literal('')),
   summary: z.string().optional(),
+  authorId: z.string(),
+  authorName: z.string(),
+  authorPhotoURL: z.string().url(),
+  reputation: z.number().optional().default(0),
 });
 
 export type Project = z.infer<typeof projectSchema>;
+
+export const userProfileSchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    photoURL: z.string().url(),
+    reputation: z.number().default(0),
+});
+
+export type UserProfile = z.infer<typeof userProfileSchema>;
