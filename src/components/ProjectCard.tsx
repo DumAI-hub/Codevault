@@ -13,8 +13,8 @@ export function ProjectCard({ project }: ProjectCardProps) {
     const techStack = project.techStack.split(',').map(tech => tech.trim());
 
     return (
-        <Link href={`/project/${project.id}`} className="block h-full">
-            <Card className="flex flex-col h-full shadow-md hover:shadow-lg transition-shadow duration-300 bg-card hover:bg-muted/50">
+        <Card className="flex flex-col h-full shadow-md hover:shadow-lg transition-shadow duration-300 bg-card">
+            <Link href={`/project/${project.id}`} className="block flex-grow hover:bg-muted/50 transition-colors duration-300 rounded-t-lg">
                 <CardHeader>
                     <CardTitle>{project.title}</CardTitle>
                     <CardDescription className="flex items-center gap-2 pt-1">
@@ -22,7 +22,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
                         <span>{project.domain} - {project.batchYear}</span>
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="flex-grow">
+                <CardContent>
                     <p className="text-muted-foreground text-sm mb-4 line-clamp-3">
                         {project.summary}
                     </p>
@@ -32,27 +32,27 @@ export function ProjectCard({ project }: ProjectCardProps) {
                         ))}
                     </div>
                 </CardContent>
-                <CardFooter className="flex-shrink-0">
-                    <div className="flex w-full justify-start gap-2">
-                        {project.githubLink && (
-                            <Button variant="outline" size="sm" asChild>
-                                <a href={project.githubLink} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
-                                    <Github className="mr-2 h-4 w-4" />
-                                    GitHub
-                                </a>
-                            </Button>
-                        )}
-                        {project.demoLink && (
-                            <Button variant="outline" size="sm" asChild>
-                                <a href={project.demoLink} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
-                                    <LinkIcon className="mr-2 h-4 w-4" />
-                                    Demo
-                                </a>
-                            </Button>
-                        )}
-                    </div>
-                </CardFooter>
-            </Card>
-        </Link>
+            </Link>
+            <CardFooter className="flex-shrink-0">
+                <div className="flex w-full justify-start gap-2">
+                    {project.githubLink && (
+                        <Button variant="outline" size="sm" asChild>
+                            <a href={project.githubLink} target="_blank" rel="noopener noreferrer">
+                                <Github className="mr-2 h-4 w-4" />
+                                GitHub
+                            </a>
+                        </Button>
+                    )}
+                    {project.demoLink && (
+                        <Button variant="outline" size="sm" asChild>
+                            <a href={project.demoLink} target="_blank" rel="noopener noreferrer">
+                                <LinkIcon className="mr-2 h-4 w-4" />
+                                Demo
+                            </a>
+                        </Button>
+                    )}
+                </div>
+            </CardFooter>
+        </Card>
     );
 }
