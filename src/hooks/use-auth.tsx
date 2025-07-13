@@ -39,6 +39,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const noOpPromise = () => Promise.resolve();
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<any | null>(null);
@@ -47,6 +49,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
+    if (!auth) {
+        setLoading(false);
+        return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setLoading(true);
       if (user) {
@@ -89,6 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [router, toast]);
 
   const loginWithGoogle = async () => {
+    if (!auth) return;
     const googleProvider = new GoogleAuthProvider();
     setLoading(true);
     try {
@@ -111,6 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signupWithEmail = async ({ email, password }: SignupData) => {
+    if (!auth) return;
     setLoading(true);
     try {
       await createUserWithEmailAndPassword(auth, email, password);
@@ -134,9 +143,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const loginWithEmail = async ({ email, password }: LoginData) => {
+    if (!auth) return;
     setLoading(true);
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      await signInWithEmailAndPassword(auth, email, password);
       toast({
         title: "Logged In!",
         description: `Welcome back!`,
@@ -156,6 +166,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
+    if (!auth) return;
     setLoading(true);
     try {
       await signOut(auth);
@@ -178,9 +189,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  return (
-    <AuthContext.Provider
-      value={{
+  const value = auth
+    ? {
         user,
         profile,
         loading,
@@ -188,8 +198,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signupWithEmail,
         loginWithEmail,
         logout,
-      }}
-    >
+      }
+    : {
+        user: null,
+        profile: null,
+        loading,
+        loginWithGoogle: noOpPromise,
+        signupWithEmail: noOpPromise,
+        loginWithEmail: noOpPromise,
+        logout: noOpPromise,
+      };
+
+  return (
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
