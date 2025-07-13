@@ -4,11 +4,10 @@ import { Header } from "@/components/Header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Github, Link as LinkIcon, CalendarDays, ArrowLeft } from "lucide-react";
+import { Github, Link as LinkIcon, CalendarDays, ArrowLeft, UserCircle } from "lucide-react";
 import Link from "next/link";
 import { GithubSummary } from "@/components/GithubSummary";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ReputationManager } from "@/components/ReputationManager";
 
 export default async function ProjectDetailsPage({ params }: { params: { id: string } }) {
   const project = await getProjectById(params.id);
@@ -69,16 +68,13 @@ export default async function ProjectDetailsPage({ params }: { params: { id: str
                 <CardContent className="flex items-center gap-4">
                     <Avatar>
                         <AvatarImage src={project.authorPhotoURL} alt={project.authorName} />
-                        <AvatarFallback>{project.authorName.charAt(0)}</AvatarFallback>
+                        <AvatarFallback><UserCircle className="h-5 w-5"/></AvatarFallback>
                     </Avatar>
                     <div className="text-sm">
                         <div className="font-semibold">{project.authorName}</div>
-                        <div className="text-muted-foreground">Reputation: {project.reputation || 0}</div>
                     </div>
                 </CardContent>
              </Card>
-
-             <ReputationManager projectId={project.id!} />
 
              <div>
                 <h3 className="font-semibold text-lg mb-4">Project Links</h3>

@@ -16,7 +16,7 @@ import { Loader2 } from "lucide-react";
 
 type ProjectFormData = Omit<Project, 'id' | 'summary' | 'authorId' | 'authorName' | 'authorPhotoURL' | 'reputation'>;
 
-// Omit fields that are auto-generated or come from the user's session
+// Omit fields that are auto-generated
 const projectFormSchema = projectSchema.omit({ 
     id: true, 
     summary: true, 

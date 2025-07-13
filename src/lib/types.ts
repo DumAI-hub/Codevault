@@ -14,20 +14,8 @@ export const projectSchema = z.object({
   summary: z.string().optional(),
   authorId: z.string(),
   authorName: z.string(),
-  authorPhotoURL: z.string().url(),
+  authorPhotoURL: z.string().url().or(z.literal('')),
   reputation: z.number().optional().default(0),
 });
 
 export type Project = z.infer<typeof projectSchema>;
-
-export const userProfileSchema = z.object({
-    id: z.string(),
-    name: z.string().min(2, "Name must be at least 2 characters."),
-    photoURL: z.string().url(),
-    reputation: z.number().default(0),
-    domain: z.string().min(1, "Please specify a domain").optional(),
-    batchYear: z.coerce.number().min(2000).max(currentYear + 5).optional(),
-    about: z.string().optional(),
-});
-
-export type UserProfile = z.infer<typeof userProfileSchema>;
