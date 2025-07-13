@@ -3,7 +3,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { 
     onAuthStateChanged, 
-    signInWithPopup, 
     signOut, 
     type User, 
     type AuthError,
@@ -109,11 +108,19 @@ export const loginWithGoogle = async () => {
   } catch (error) {
     const authError = error as AuthError;
     console.error("Error logging in with Google: ", authError);
-    toast({
-        title: "Login Failed",
-        description: "An unexpected error occurred during login. Please try again.",
-        variant: "destructive",
-    });
+    if (authError.code === 'auth/unauthorized-domain') {
+        toast({
+            title: "Domain Not Authorized",
+            description: "This app's domain is not authorized for Firebase login. Please add it to your Firebase project's Authentication settings.",
+            variant: "destructive",
+        });
+    } else {
+        toast({
+            title: "Login Failed",
+            description: "An unexpected error occurred during login. Please try again.",
+            variant: "destructive",
+        });
+    }
   }
 };
 
