@@ -17,6 +17,16 @@ import { useAuth } from "@/hooks/use-auth";
 
 type ProjectFormData = Omit<Project, 'id' | 'summary' | 'authorId' | 'authorName' | 'authorPhotoURL' | 'reputation'>;
 
+// Omit fields that are auto-generated or come from the user's session
+const projectFormSchema = projectSchema.omit({ 
+    id: true, 
+    summary: true, 
+    authorId: true,
+    authorName: true,
+    authorPhotoURL: true,
+    reputation: true,
+});
+
 export function ProjectForm() {
   const router = useRouter();
   const { toast } = useToast();
@@ -24,14 +34,7 @@ export function ProjectForm() {
   const { user } = useAuth();
 
   const form = useForm<ProjectFormData>({
-    resolver: zodResolver(projectSchema.omit({ 
-        id: true, 
-        summary: true, 
-        authorId: true,
-        authorName: true,
-        authorPhotoURL: true,
-        reputation: true,
-    })),
+    resolver: zodResolver(projectFormSchema),
     defaultValues: {
       title: "",
       description: "",
@@ -54,7 +57,7 @@ export function ProjectForm() {
     }
 
     startTransition(async () => {
-      const result = await addProject(values, user);
+      const result = await addProject(values);
       if (result.success) {
         toast({
           title: "Project Submitted!",

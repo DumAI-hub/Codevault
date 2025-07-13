@@ -13,6 +13,7 @@ import {
 } from 'firebase/auth';
 import { auth, googleProvider } from '@/lib/firebase';
 import { toast } from './use-toast';
+import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
   user: User | null;
@@ -21,9 +22,30 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType>({ user: null, loading: true });
 
+async function getAuthToken() {
+    if (auth?.currentUser) {
+        return await auth.currentUser.getIdToken();
+    }
+    return null;
+}
+
+// We need to override fetch to include the auth token in headers
+// for our Server Actions to be authenticated.
+const originalFetch = global.fetch;
+global.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+    const token = await getAuthToken();
+    const headers = new Headers(init?.headers);
+    if (token) {
+        headers.set('Authorization', `Bearer ${token}`);
+    }
+    return originalFetch(input, { ...init, headers });
+};
+
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     if (!auth) {
@@ -33,10 +55,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setLoading(false);
+      
+      // On first login via Google, their profile might not be set up
+      // We can check if it's a new user and redirect.
+      const isNewUser = user?.metadata.creationTime === user?.metadata.lastSignInTime;
+      if (user && isNewUser) {
+        // A short delay helps ensure the session is fully established.
+        setTimeout(() => router.push('/profile'), 100);
+      }
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [router]);
 
   return (
     <AuthContext.Provider value={{ user, loading }}>
@@ -51,7 +81,6 @@ export const useAuth = () => {
 
 export const loginWithGoogle = async () => {
   if (!auth || !googleProvider) {
-    console.error("Firebase is not configured. Please add your credentials to .env to enable authentication.");
     toast({
         title: "Login Unavailable",
         description: "Authentication is not configured. Please check the setup.",
@@ -63,10 +92,10 @@ export const loginWithGoogle = async () => {
     await signInWithPopup(auth, googleProvider);
   } catch (error) {
     const authError = error as AuthError;
-    if (authError.code === 'auth/popup-closed-by-user') {
+     if (authError.code === 'auth/popup-closed-by-user') {
         toast({
             title: "Login Canceled",
-            description: "The sign-in popup was closed. Please check your browser's popup blocker and try again.",
+            description: "The sign-in popup was closed. Please try again.",
             variant: "destructive",
         });
     } else {

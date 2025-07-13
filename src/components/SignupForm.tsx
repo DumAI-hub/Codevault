@@ -40,9 +40,9 @@ export function SignupForm() {
       if (result.success) {
         toast({
           title: "Account Created!",
-          description: "Welcome to CodeVault!",
+          description: "Let's set up your profile.",
         });
-        router.push("/");
+        router.push("/profile");
       } else {
         toast({
           title: "Signup Failed",
