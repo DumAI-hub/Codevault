@@ -13,7 +13,6 @@ import { useToast } from "@/hooks/use-toast";
 import { projectSchema, type Project } from "@/lib/types";
 import { addProject } from "@/lib/actions";
 import { Loader2 } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
 
 type ProjectFormData = Omit<Project, 'id' | 'summary' | 'authorId' | 'authorName' | 'authorPhotoURL' | 'reputation'>;
 
@@ -31,7 +30,6 @@ export function ProjectForm() {
   const router = useRouter();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
-  const { user } = useAuth();
 
   const form = useForm<ProjectFormData>({
     resolver: zodResolver(projectFormSchema),
@@ -47,15 +45,6 @@ export function ProjectForm() {
   });
 
   function onSubmit(values: ProjectFormData) {
-    if (!user) {
-        toast({
-            title: "Authentication Required",
-            description: "You must be logged in to submit a project.",
-            variant: "destructive",
-        });
-        return;
-    }
-
     startTransition(async () => {
       const result = await addProject(values);
       if (result.success) {
@@ -182,7 +171,7 @@ export function ProjectForm() {
         </div>
 
 
-        <Button type="submit" disabled={isPending || !user} className="w-full md:w-auto">
+        <Button type="submit" disabled={isPending} className="w-full md:w-auto">
           {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {isPending ? "Submitting..." : "Submit Project"}
         </Button>

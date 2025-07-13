@@ -1,13 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
-import { auth } from "firebase-admin";
-import { getFirebaseAdminApp } from "./firebase-admin";
 import { summarizeProjectDescription } from "@/ai/flows/summarize-project-description";
 import { summarizeGithubRepo } from "@/ai/flows/summarize-github-repo";
 import type { Project, UserProfile } from "./types";
-import { projectSchema, userProfileSchema } from "./types";
+import { projectSchema } from "./types";
 
 // This is a mock database. In a real application, you would use a database
 // like Firestore, PostgreSQL, etc.
@@ -78,25 +75,6 @@ const usersDb: Record<string, UserProfile> = {
     'user3': { id: 'user3', name: 'Alex Johnson', photoURL: 'https://placehold.co/100x100.png', reputation: 5, domain: 'Machine Learning', batchYear: 2023, about: 'Data scientist with a focus on NLP and sentiment analysis.' },
 };
 
-async function getAuthenticatedUser() {
-    const app = getFirebaseAdminApp();
-    if (!app) {
-        return null;
-    }
-    const idToken = headers().get('Authorization')?.split('Bearer ')[1];
-    if (!idToken) {
-        return null;
-    }
-    try {
-        const decodedToken = await auth().verifyIdToken(idToken);
-        return decodedToken;
-    } catch (error) {
-        console.error("Error verifying ID token:", error);
-        return null;
-    }
-}
-
-
 export async function getProjects(): Promise<Project[]> {
     // In a real app, you would fetch from your database.
     return Promise.resolve(projectsDb);
@@ -109,11 +87,6 @@ export async function getProjectById(id: string): Promise<Project | undefined> {
 export async function addProject(
     data: Omit<Project, 'id' | 'summary' | 'authorId' | 'authorName' | 'authorPhotoURL' | 'reputation'>
 ) {
-    const user = await getAuthenticatedUser();
-    if (!user) {
-      return { success: false, error: "Authentication required." };
-    }
-
     const validatedData = projectSchema.safeParse(data);
     if (!validatedData.success) {
         return { success: false, error: "Invalid data" };
@@ -128,19 +101,14 @@ export async function addProject(
             id: new Date().getTime().toString(),
             ...validatedData.data,
             summary,
-            authorId: user.uid,
-            authorName: user.name || 'Anonymous',
-            authorPhotoURL: user.picture || 'https://placehold.co/100x100.png',
+            authorId: 'anonymous',
+            authorName: 'Anonymous',
+            authorPhotoURL: 'https://placehold.co/100x100.png',
             reputation: 0,
         };
 
         // In a real app, you would save to your database.
         projectsDb.unshift(newProject);
-        
-        if (!usersDb[user.uid]) {
-            usersDb[user.uid] = { id: user.uid, name: user.name || 'Anonymous', photoURL: user.picture || 'https://placehold.co/100x100.png', reputation: 0 };
-        }
-        usersDb[user.uid].reputation += 5;
         
         revalidatePath("/");
         revalidatePath(`/project/${newProject.id}`);
@@ -168,11 +136,6 @@ export async function getGithubSummary(githubLink: string) {
 
 
 export async function rateProject(projectId: string) {
-    const user = await getAuthenticatedUser();
-    if (!user) {
-      return { success: false, error: "You must be logged in to rate a project." };
-    }
-
     const project = projectsDb.find(p => p.id === projectId);
     if (!project) {
         return { success: false, error: "Project not found" };
@@ -187,58 +150,4 @@ export async function rateProject(projectId: string) {
 
     revalidatePath(`/project/${projectId}`);
     return { success: true, newReputation: project.reputation };
-}
-
-export async function hasProfile(): Promise<boolean> {
-    const user = await getAuthenticatedUser();
-    if (!user) return false;
-    const profile = usersDb[user.uid];
-    return !!(profile && profile.domain && profile.batchYear);
-}
-
-
-export async function getCurrentUserProfile(): Promise<UserProfile | null> {
-    const user = await getAuthenticatedUser();
-    if (!user) return null;
-    
-    // Create a basic profile if it doesn't exist.
-    if (!usersDb[user.uid]) {
-         usersDb[user.uid] = {
-            id: user.uid,
-            name: user.name || 'Anonymous',
-            photoURL: user.picture || 'https://placehold.co/100x100.png',
-            reputation: 0,
-        };
-    }
-    return usersDb[user.uid];
-}
-
-export async function updateUserProfile(data: Partial<UserProfile>) {
-    const user = await getAuthenticatedUser();
-    if (!user) {
-        return { success: false, error: "Authentication required." };
-    }
-
-    const validatedData = userProfileSchema.partial().safeParse(data);
-    if (!validatedData.success) {
-        console.log(validatedData.error);
-        return { success: false, error: "Invalid profile data." };
-    }
-    
-    // In a real app, you would update the user in your database
-    if (!usersDb[user.uid]) {
-        usersDb[user.uid] = {
-            id: user.uid,
-            name: user.name || "Anonymous",
-            photoURL: user.picture || 'https://placehold.co/100x100.png',
-            reputation: 0,
-        };
-    }
-    
-    usersDb[user.uid] = { ...usersDb[user.uid], ...validatedData.data };
-    
-    revalidatePath("/profile");
-    revalidatePath("/");
-
-    return { success: true };
 }

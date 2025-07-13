@@ -4,7 +4,6 @@ import { useState, useTransition } from "react";
 import { ThumbsUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAuth } from "@/hooks/use-auth";
 import { rateProject } from "@/lib/actions";
 import { useToast } from "@/hooks/use-toast";
 
@@ -13,22 +12,12 @@ interface ReputationManagerProps {
 }
 
 export function ReputationManager({ projectId }: ReputationManagerProps) {
-    const { user } = useAuth();
     const { toast } = useToast();
     const [isPending, startTransition] = useTransition();
     const [voted, setVoted] = useState(false);
 
 
     const handleVote = () => {
-        if (!user) {
-            toast({
-                title: "Login Required",
-                description: "You need to be logged in to vote.",
-                variant: "destructive",
-            });
-            return;
-        }
-
         startTransition(async () => {
             const result = await rateProject(projectId);
             if (result.success) {
@@ -58,17 +47,12 @@ export function ReputationManager({ projectId }: ReputationManagerProps) {
             <CardContent>
                 <Button 
                     onClick={handleVote} 
-                    disabled={isPending || voted || !user} 
+                    disabled={isPending || voted} 
                     className="w-full"
                 >
                     <ThumbsUp className="mr-2 h-4 w-4" />
                     {voted ? "Thanks for voting!" : "Upvote Project"}
                 </Button>
-                 {!user && (
-                    <p className="text-xs text-muted-foreground mt-2 text-center">
-                        Please log in to vote.
-                    </p>
-                )}
             </CardContent>
         </Card>
     );

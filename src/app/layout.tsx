@@ -1,7 +1,6 @@
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
-import { AuthProvider } from '@/components/AuthProvider';
 
 export const metadata: Metadata = {
   title: 'CodeVault: Student Project Archive',
@@ -21,12 +20,10 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased h-full bg-background">
-        <AuthProvider>
-            <div className="min-h-screen">
-              {children}
-            </div>
-            <Toaster />
-        </AuthProvider>
+          <div className="min-h-screen">
+            {children}
+          </div>
+          <Toaster />
       </body>
     </html>
   );

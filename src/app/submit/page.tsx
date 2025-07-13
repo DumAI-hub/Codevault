@@ -1,10 +1,9 @@
 import { Header } from "@/components/Header";
 import { ProjectForm } from "@/components/ProjectForm";
-import { AuthGuard } from "@/components/AuthGuard";
 
 export default function SubmitPage() {
   return (
-    <AuthGuard>
+    <>
       <Header />
       <main className="container mx-auto max-w-2xl px-4 py-8">
         <div className="space-y-2 mb-8">
@@ -15,6 +14,6 @@ export default function SubmitPage() {
         </div>
         <ProjectForm />
       </main>
-    </AuthGuard>
+    </>
   );
 }
