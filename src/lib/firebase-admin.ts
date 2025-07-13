@@ -7,10 +7,24 @@ const serviceAccount: admin.ServiceAccount = {
 };
 
 export function getFirebaseAdminApp() {
-    if (!admin.apps.length) {
-        admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount),
-        });
+    // Check if all required service account details are present
+    const hasCredentials = serviceAccount.projectId && serviceAccount.privateKey && serviceAccount.clientEmail;
+
+    if (hasCredentials && !admin.apps.length) {
+        try {
+            admin.initializeApp({
+                credential: admin.credential.cert(serviceAccount),
+            });
+        } catch (error: any) {
+            console.error("Firebase Admin initialization error:", error.message);
+            // Return null or a marker to indicate failure
+            return null;
+        }
     }
+    
+    if (!admin.apps.length) {
+        return null;
+    }
+
     return admin.app();
 }

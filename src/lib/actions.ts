@@ -79,7 +79,10 @@ const usersDb: Record<string, UserProfile> = {
 };
 
 async function getAuthenticatedUser() {
-    getFirebaseAdminApp();
+    const app = getFirebaseAdminApp();
+    if (!app) {
+        return null;
+    }
     const idToken = headers().get('Authorization')?.split('Bearer ')[1];
     if (!idToken) {
         return null;
