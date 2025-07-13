@@ -19,3 +19,31 @@ export const projectSchema = z.object({
 });
 
 export type Project = z.infer<typeof projectSchema>;
+
+export const loginSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+export type LoginData = z.infer<typeof loginSchema>;
+
+export const signupSchema = z
+  .object({
+    email: z.string().email("Invalid email address"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+  
+export type SignupData = z.infer<typeof signupSchema>;
+
+export const profileSchema = z.object({
+  batchYear: z.coerce.number().min(2000, "Invalid year").max(currentYear + 1, "Year cannot be too far in the future"),
+  domain: z.string().min(2, "Domain must be at least 2 characters long"),
+  about: z.string().min(10, "Must be at least 10 characters").max(500, "Cannot exceed 500 characters").optional().or(z.literal('')),
+});
+
+export type Profile = z.infer<typeof profileSchema>;
