@@ -10,6 +10,8 @@ import {
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
     updateProfile,
+    signInWithRedirect,
+    getRedirectResult,
 } from 'firebase/auth';
 import { auth, googleProvider } from '@/lib/firebase';
 import { toast } from './use-toast';
@@ -55,15 +57,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setLoading(false);
-      
-      // On first login via Google, their profile might not be set up
-      // We can check if it's a new user and redirect.
-      const isNewUser = user?.metadata.creationTime === user?.metadata.lastSignInTime;
-      if (user && isNewUser) {
-        // A short delay helps ensure the session is fully established.
-        setTimeout(() => router.push('/profile'), 100);
-      }
     });
+
+    // Handle the redirect result from Google login
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result && result.user) {
+          // This is a new user signing in via redirect.
+          const isNewUser = result.user.metadata.creationTime === result.user.metadata.lastSignInTime;
+          if (isNewUser) {
+            router.push('/profile');
+          }
+        }
+      })
+      .catch((error) => {
+        const authError = error as AuthError;
+        console.error("Error getting redirect result: ", authError);
+        toast({
+          title: "Login Failed",
+          description: "An unexpected error occurred during login. Please try again.",
+          variant: "destructive",
+        });
+      });
 
     return () => unsubscribe();
   }, [router]);
@@ -89,23 +104,16 @@ export const loginWithGoogle = async () => {
     return;
   }
   try {
-    await signInWithPopup(auth, googleProvider);
+    // Use signInWithRedirect instead of signInWithPopup
+    await signInWithRedirect(auth, googleProvider);
   } catch (error) {
     const authError = error as AuthError;
-     if (authError.code === 'auth/popup-closed-by-user') {
-        toast({
-            title: "Login Canceled",
-            description: "The sign-in pop-up was closed before completing. Please check if your browser is blocking pop-ups and try again.",
-            variant: "destructive",
-        });
-    } else {
-        console.error("Error logging in with Google: ", authError);
-        toast({
-            title: "Login Failed",
-            description: "An unexpected error occurred during login. Please try again.",
-            variant: "destructive",
-        });
-    }
+    console.error("Error logging in with Google: ", authError);
+    toast({
+        title: "Login Failed",
+        description: "An unexpected error occurred during login. Please try again.",
+        variant: "destructive",
+    });
   }
 };
 
@@ -149,6 +157,12 @@ export const signupWithEmail = async (email: string, password: string, displayNa
     try {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(userCredential.user, { displayName });
+        // After signup, redirect to profile page
+        const isNewUser = userCredential.user.metadata.creationTime === userCredential.user.metadata.lastSignInTime;
+        if(isNewUser){
+            const router = useRouter();
+            router.push('/profile');
+        }
         return { success: true };
     } catch (error) {
         const authError = error as AuthError;

@@ -55,9 +55,9 @@ export function LoginForm() {
   async function onGoogleLogin() {
     startTransition(async () => {
         await loginWithGoogle();
-        // The onAuthStateChanged listener in use-auth will handle the redirect
-        // so we don't need to push the router here.
-        // A success toast could be nice but it can also feel redundant.
+        // The getRedirectResult in AuthProvider will handle the user state.
+        // We don't need to do anything else here. The page will appear to "reload"
+        // as it redirects to Google and back.
     });
   }
 
@@ -112,6 +112,7 @@ export function LoginForm() {
         </div>
 
         <Button variant="outline" className="w-full" onClick={onGoogleLogin} disabled={isPending}>
+            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             <svg role="img" viewBox="0 0 24 24" className="mr-2 h-4 w-4"><path fill="currentColor" d="M12.48 10.92v3.28h7.84c-.24 1.84-.85 3.18-1.73 4.1-1.02 1.02-2.3 1.84-4.32 1.84-3.6 0-6.5-2.95-6.5-6.5s2.9-6.5 6.5-6.5c1.95 0 3.35.79 4.32 1.73l2.5-2.5C19.03 3.49 16.36 2 12.48 2 7.23 2 3.2 6.03 3.2 11.25s4.03 9.25 9.28 9.25c5.4 0 8.87-3.67 8.87-8.87 0-.6-.07-1.2-.18-1.78Z"></path></svg>
             Google
         </Button>
