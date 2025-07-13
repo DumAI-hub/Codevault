@@ -95,7 +95,7 @@ export const loginWithGoogle = async () => {
      if (authError.code === 'auth/popup-closed-by-user') {
         toast({
             title: "Login Canceled",
-            description: "The sign-in popup was closed. Please try again.",
+            description: "The sign-in pop-up was closed before completing. Please check if your browser is blocking pop-ups and try again.",
             variant: "destructive",
         });
     } else {
