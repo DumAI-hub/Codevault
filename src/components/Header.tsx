@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { Archive, Plus, LogOut } from "lucide-react";
+import { Archive, Plus, LogOut, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useAuth, loginWithGoogle, logout } from "@/hooks/use-auth";
+import { useAuth, logout } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -62,7 +62,12 @@ export function Header() {
                     </DropdownMenuContent>
                 </DropdownMenu>
             ) : (
-                <Button onClick={loginWithGoogle}>Login with Google</Button>
+                <Button asChild variant="ghost">
+                    <Link href="/login">
+                        <LogIn className="mr-2 h-4 w-4" />
+                        Login
+                    </Link>
+                </Button>
             )}
         </div>
       </div>

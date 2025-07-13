@@ -1,7 +1,16 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { onAuthStateChanged, signInWithPopup, signOut, type User, type AuthError } from 'firebase/auth';
+import { 
+    onAuthStateChanged, 
+    signInWithPopup, 
+    signOut, 
+    type User, 
+    type AuthError,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    updateProfile,
+} from 'firebase/auth';
 import { auth, googleProvider } from '@/lib/firebase';
 import { toast } from './use-toast';
 
@@ -70,6 +79,53 @@ export const loginWithGoogle = async () => {
     }
   }
 };
+
+const getFirebaseAuthErrorMessage = (errorCode: string): string => {
+    switch (errorCode) {
+        case 'auth/invalid-email':
+            return 'The email address is not valid.';
+        case 'auth/user-disabled':
+            return 'This user account has been disabled.';
+        case 'auth/user-not-found':
+            return 'No user found with this email.';
+        case 'auth/wrong-password':
+            return 'Incorrect password. Please try again.';
+        case 'auth/email-already-in-use':
+            return 'An account already exists with this email address.';
+        case 'auth/weak-password':
+            return 'The password is too weak. Please use a stronger password.';
+        default:
+            return 'An unexpected authentication error occurred. Please try again.';
+    }
+}
+
+
+export const loginWithEmail = async (email: string, password: string) => {
+    if (!auth) {
+        return { success: false, error: "Firebase not configured." };
+    }
+    try {
+        await signInWithEmailAndPassword(auth, email, password);
+        return { success: true };
+    } catch (error) {
+        const authError = error as AuthError;
+        return { success: false, error: getFirebaseAuthErrorMessage(authError.code) };
+    }
+}
+
+export const signupWithEmail = async (email: string, password: string, displayName: string) => {
+    if (!auth) {
+        return { success: false, error: "Firebase not configured." };
+    }
+    try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        await updateProfile(userCredential.user, { displayName });
+        return { success: true };
+    } catch (error) {
+        const authError = error as AuthError;
+        return { success: false, error: getFirebaseAuthErrorMessage(authError.code) };
+    }
+}
 
 export const logout = async () => {
   if (!auth) {
