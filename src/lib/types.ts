@@ -16,7 +16,7 @@ export const projectSchema = z.object({
   authorId: z.string(),
   authorName: z.string(),
   authorPhotoURL: z.string().url().or(z.literal('')),
-  reputation: z.number().optional().default(0),
+  reputation: z.number().default(0),
   createdAt: z.string().optional(), // Stored as a timestamp, retrieved as an ISO string
 });
 
@@ -47,6 +47,7 @@ export const profileSchema = z.object({
   batchYear: z.coerce.number().min(2000, "Invalid year").max(currentYear + 1, "Year cannot be too far in the future"),
   domain: z.string().min(2, "Domain must be at least 2 characters long"),
   about: z.string().min(10, "Must be at least 10 characters").max(500, "Cannot exceed 500 characters").optional().or(z.literal('')),
+  reputation: z.number().default(0),
 });
 
 export type Profile = z.infer<typeof profileSchema>;

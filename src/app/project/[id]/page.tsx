@@ -1,6 +1,6 @@
 
 import { notFound } from "next/navigation";
-import { getProjectById } from "@/lib/actions";
+import { getProjectById, getProfileById } from "@/lib/actions";
 import { Header } from "@/components/Header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ export default async function ProjectDetailsPage({ params }: { params: { id: str
     notFound();
   }
 
+  const authorProfile = await getProfileById(project.authorId);
   const techStack = project.techStack.split(',').map(tech => tech.trim());
 
   return (
@@ -66,14 +67,26 @@ export default async function ProjectDetailsPage({ params }: { params: { id: str
                 <CardHeader>
                     <CardTitle className="text-lg">Author</CardTitle>
                 </CardHeader>
-                <CardContent className="flex items-center gap-4">
-                    <Avatar>
-                        <AvatarImage src={project.authorPhotoURL} alt={project.authorName} />
-                        <AvatarFallback><UserCircle className="h-5 w-5"/></AvatarFallback>
-                    </Avatar>
-                    <div className="text-sm">
-                        <div className="font-semibold">{project.authorName}</div>
-                    </div>
+                <CardContent>
+                    {authorProfile ? (
+                        <Link href={`/profile/${authorProfile.id}`} className="flex items-center gap-4 group">
+                             <Avatar>
+                                <AvatarImage src={authorProfile.photoURL} alt={authorProfile.name} />
+                                <AvatarFallback><UserCircle className="h-5 w-5"/></AvatarFallback>
+                            </Avatar>
+                            <div className="text-sm">
+                                <div className="font-semibold group-hover:underline">{authorProfile.name}</div>
+                                <div className="text-xs text-muted-foreground">{authorProfile.domain}</div>
+                            </div>
+                        </Link>
+                    ) : (
+                        <div className="flex items-center gap-4">
+                            <Avatar>
+                                <AvatarFallback><UserCircle className="h-5 w-5"/></AvatarFallback>
+                            </Avatar>
+                            <div className="text-sm font-semibold">Anonymous</div>
+                        </div>
+                    )}
                 </CardContent>
              </Card>
 

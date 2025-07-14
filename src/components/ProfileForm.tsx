@@ -14,16 +14,25 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 import { profileSchema, type Profile } from "@/lib/types";
 import { updateUserProfile, getCurrentUserProfile } from "@/lib/actions";
-import { Loader2, PartyPopper } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Loader2, PartyPopper, Star } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
+import { Badge } from "./ui/badge";
+
+const getReputationTier = (reputation: number) => {
+    if (reputation >= 300) return { name: "Mentor", color: "bg-purple-500" };
+    if (reputation >= 150) return { name: "Innovator", color: "bg-blue-500" };
+    if (reputation >= 50) return { name: "Contributor", color: "bg-green-500" };
+    return { name: "Newbie", color: "bg-gray-500" };
+};
+
 
 export function ProfileForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user } = useAuth();
+  const { user, profile, loading } = useAuth();
   const isSetup = searchParams.get('setup') === 'true';
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
@@ -36,6 +45,7 @@ export function ProfileForm() {
       batchYear: new Date().getFullYear(),
       domain: "",
       about: "",
+      reputation: 0,
     },
   });
 
@@ -45,11 +55,10 @@ export function ProfileForm() {
       setIsLoadingProfile(true);
       try {
         const idToken = await user.getIdToken();
-        const profile = await getCurrentUserProfile(idToken);
-        if (profile) {
-          form.reset(profile);
+        const serverProfile = await getCurrentUserProfile(idToken);
+        if (serverProfile) {
+          form.reset(serverProfile);
         } else {
-           // Fallback to user display name if profile doesn't exist yet
            form.setValue('name', user.displayName || '');
         }
       } catch (error) {
@@ -74,7 +83,15 @@ export function ProfileForm() {
 
     startTransition(async () => {
       const idToken = await user.getIdToken();
-      const result = await updateUserProfile(values, idToken);
+      // We only pass the fields that can be edited by the user
+      const result = await updateUserProfile({
+        name: values.name,
+        batchYear: values.batchYear,
+        domain: values.domain,
+        about: values.about,
+        reputation: values.reputation, // Pass current reputation to avoid accidental override
+      }, idToken);
+
       if (result.success) {
         toast({
           title: "Profile Updated!",
@@ -94,8 +111,11 @@ export function ProfileForm() {
       }
     });
   }
+
+  const reputation = form.watch('reputation');
+  const tier = getReputationTier(reputation);
   
-  if (isLoadingProfile) {
+  if (isLoadingProfile || loading) {
     return (
         <Card>
             <CardContent className="p-6 space-y-8">
@@ -113,7 +133,19 @@ export function ProfileForm() {
 
   return (
     <Card>
-      <CardContent className="p-6">
+      <CardHeader>
+        <div className="flex justify-between items-start">
+            <CardTitle>Edit Information</CardTitle>
+            <div className="flex items-center gap-3">
+                 <div className="flex items-center gap-1 text-yellow-500">
+                    <Star className="h-5 w-5" />
+                    <span className="font-bold text-lg">{reputation}</span>
+                 </div>
+                 <Badge className={`${tier.color} text-white`}>{tier.name}</Badge>
+            </div>
+        </div>
+      </CardHeader>
+      <CardContent>
         {isSetup && (
              <Alert className="mb-6 border-green-500 bg-green-50 text-green-800">
                 <PartyPopper className="h-5 w-5 text-green-500" />

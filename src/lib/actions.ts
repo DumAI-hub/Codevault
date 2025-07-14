@@ -49,6 +49,30 @@ export async function getProjects(): Promise<Project[]> {
     return projects;
 }
 
+export async function getProjectsByAuthor(authorId: string): Promise<Project[]> {
+    const adminApp = getFirebaseAdminApp();
+    if (!adminApp) return [];
+
+    const db = getFirestore(adminApp);
+    const projectsSnapshot = await db.collection("projects")
+        .where("authorId", "==", authorId)
+        .orderBy("createdAt", "desc")
+        .get();
+
+    const projects: Project[] = [];
+    projectsSnapshot.forEach(doc => {
+        const data = doc.data();
+        projects.push({
+            id: doc.id,
+            ...data,
+            createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
+        } as Project);
+    });
+
+    return projects;
+}
+
+
 export async function getProjectById(id: string): Promise<Project | undefined> {
     const adminApp = getFirebaseAdminApp();
     if (!adminApp) return undefined;
@@ -96,7 +120,6 @@ export async function addProject(
         summary = result.summary;
     } catch (error) {
         console.error("AI summarization failed, but proceeding with submission:", error);
-        // We will proceed to submit the project without a summary.
     }
 
     try {
@@ -110,10 +133,18 @@ export async function addProject(
             createdAt: FieldValue.serverTimestamp(),
         };
 
-        const projectRef = await db.collection("projects").add(newProjectData);
-        
+        const userRef = db.collection("users").doc(user.uid);
+        const projectRef = db.collection("projects").doc();
+
+        // Use a batch to perform atomic write
+        const batch = db.batch();
+        batch.set(projectRef, newProjectData);
+        batch.update(userRef, { reputation: FieldValue.increment(10) }); // +10 points for submission
+        await batch.commit();
+
         revalidatePath("/");
         revalidatePath(`/project/${projectRef.id}`);
+        revalidatePath(`/profile/${user.uid}`);
         
         return { success: true };
     } catch (error) {
@@ -155,18 +186,16 @@ export async function updateUserProfile(data: Profile, idToken: string) {
     
     try {
         const userRecord = await auth(adminApp).getUser(user.uid);
-        // Update name in Firebase Auth first if it has changed
         if (userRecord.displayName !== validatedData.data.name) {
              await auth(adminApp).updateUser(user.uid, {
                 displayName: validatedData.data.name,
             });
         }
        
-        // Create or update the profile in the 'users' collection
         await db.collection("users").doc(user.uid).set(validatedData.data, { merge: true });
         
         revalidatePath("/profile");
-        revalidatePath("/"); // Revalidate home page in case author names are shown there
+        revalidatePath("/");
 
         return { success: true };
     } catch (error) {
@@ -191,11 +220,49 @@ export async function getCurrentUserProfile(idToken: string): Promise<Profile | 
         return profileDoc.data() as Profile;
     }
     
-    // If no profile in DB, return a default structure based on Auth info
     return {
         name: user.name || "",
         batchYear: new Date().getFullYear(),
         domain: "",
-        about: ""
+        about: "",
+        reputation: 0,
     };
+}
+
+
+export async function getProfileById(userId: string): Promise<(Profile & {id: string, email: string, photoURL: string}) | null> {
+    const adminApp = getFirebaseAdminApp();
+    if (!adminApp) return null;
+
+    try {
+        const userRecord = await auth(adminApp).getUser(userId);
+        const db = getFirestore(adminApp);
+        const profileDoc = await db.collection("users").doc(userId).get();
+        
+        if (!profileDoc.exists) {
+             // Fallback for users who might not have a firestore doc yet
+            return {
+                id: userId,
+                email: userRecord.email || '',
+                photoURL: userRecord.photoURL || '',
+                name: userRecord.displayName || 'Anonymous',
+                batchYear: new Date().getFullYear(),
+                domain: '',
+                about: '',
+                reputation: 0,
+            };
+        }
+
+        const profileData = profileDoc.data() as Profile;
+        return {
+            id: userId,
+            email: userRecord.email || '',
+            photoURL: userRecord.photoURL || '',
+            ...profileData,
+        };
+
+    } catch (error) {
+        console.error("Error fetching user profile by ID:", error);
+        return null;
+    }
 }
