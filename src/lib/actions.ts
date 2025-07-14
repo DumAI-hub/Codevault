@@ -14,6 +14,10 @@ async function getAuthenticatedUser(idToken: string) {
     const adminApp = getFirebaseAdminApp();
     if (!adminApp) return null;
 
+    if (!idToken) {
+        return null;
+    }
+
     try {
         const decodedToken = await auth(adminApp).verifyIdToken(idToken);
         return decodedToken;
@@ -182,13 +186,16 @@ export async function getCurrentUserProfile(idToken: string): Promise<Profile | 
     const db = getFirestore(adminApp);
     
     const profileDoc = await db.collection("users").doc(user.uid).get();
-    const profileFromDb = profileDoc.exists ? profileDoc.data() : {};
     
-    // Combine db profile with Firebase Auth profile info as a fallback
+    if (profileDoc.exists) {
+        return profileDoc.data() as Profile;
+    }
+    
+    // If no profile in DB, return a default structure based on Auth info
     return {
-        name: user.name || (profileFromDb as Profile)?.name || "",
-        batchYear: (profileFromDb as Profile)?.batchYear || new Date().getFullYear(),
-        domain: (profileFromDb as Profile)?.domain || "",
-        about: (profileFromDb as Profile)?.about || ""
+        name: user.name || "",
+        batchYear: new Date().getFullYear(),
+        domain: "",
+        about: ""
     };
 }

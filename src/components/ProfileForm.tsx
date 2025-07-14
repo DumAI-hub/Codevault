@@ -4,7 +4,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useTransition, useEffect, useState } from "react";
 import { useSearchParams } from 'next/navigation'
 
 import { Button } from "@/components/ui/button";
@@ -13,38 +13,68 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { profileSchema, type Profile } from "@/lib/types";
-import { updateUserProfile } from "@/lib/actions";
-import { Loader2 } from "lucide-react";
+import { updateUserProfile, getCurrentUserProfile } from "@/lib/actions";
+import { Loader2, PartyPopper } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { PartyPopper } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
 
-interface ProfileFormProps {
-    profile: Profile | null;
-}
-
-export function ProfileForm({ profile }: ProfileFormProps) {
+export function ProfileForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const isSetup = searchParams.get('setup') === 'true';
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
 
   const form = useForm<Profile>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      name: profile?.name || user?.displayName || "",
-      batchYear: profile?.batchYear || new Date().getFullYear(),
-      domain: profile?.domain || "",
-      about: profile?.about || "",
+      name: "",
+      batchYear: new Date().getFullYear(),
+      domain: "",
+      about: "",
     },
   });
 
-  function onSubmit(values: Profile) {
+  useEffect(() => {
+    async function fetchProfile() {
+      if (!user) return;
+      setIsLoadingProfile(true);
+      try {
+        const idToken = await user.getIdToken();
+        const profile = await getCurrentUserProfile(idToken);
+        if (profile) {
+          form.reset(profile);
+        } else {
+           // Fallback to user display name if profile doesn't exist yet
+           form.setValue('name', user.displayName || '');
+        }
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Could not fetch your profile data.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoadingProfile(false);
+      }
+    }
+    fetchProfile();
+  }, [user, form, toast]);
+
+
+  async function onSubmit(values: Profile) {
+    if (!user) {
+        toast({ title: "Not Authenticated", description: "You must be logged in.", variant: "destructive" });
+        return;
+    }
+
     startTransition(async () => {
-      const result = await updateUserProfile(values);
+      const idToken = await user.getIdToken();
+      const result = await updateUserProfile(values, idToken);
       if (result.success) {
         toast({
           title: "Profile Updated!",
@@ -63,6 +93,22 @@ export function ProfileForm({ profile }: ProfileFormProps) {
         });
       }
     });
+  }
+  
+  if (isLoadingProfile) {
+    return (
+        <Card>
+            <CardContent className="p-6 space-y-8">
+                <Skeleton className="h-8 w-1/3" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                </div>
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-10 w-32" />
+            </CardContent>
+        </Card>
+    );
   }
 
   return (

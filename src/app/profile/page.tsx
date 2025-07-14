@@ -1,12 +1,11 @@
 
+"use client";
+
 import { Header } from "@/components/Header";
 import { ProfileForm } from "@/components/ProfileForm";
-import { getCurrentUserProfile } from "@/lib/actions";
 import { AuthGuard } from "@/components/AuthGuard";
 
-export default async function ProfilePage() {
-    const profile = await getCurrentUserProfile();
-
+export default function ProfilePage() {
     return (
         <AuthGuard>
             <Header />
@@ -17,7 +16,7 @@ export default async function ProfilePage() {
                         Update your personal information and preferences.
                     </p>
                 </div>
-                <ProfileForm profile={profile} />
+                <ProfileForm />
             </main>
         </AuthGuard>
     );
