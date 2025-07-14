@@ -143,7 +143,8 @@ export async function addProject(
         // Use a batch to perform atomic write
         const batch = db.batch();
         batch.set(projectRef, newProjectData);
-        batch.update(userRef, { reputation: FieldValue.increment(10) }); // +10 points for submission
+        // Use set with merge:true to create the doc if it doesn't exist, or update if it does.
+        batch.set(userRef, { reputation: FieldValue.increment(10) }, { merge: true }); // +10 points for submission
         await batch.commit();
 
         revalidatePath("/");
@@ -171,7 +172,7 @@ export async function getGithubSummary(githubLink: string) {
     }
 }
 
-export async function updateUserProfile(data: Profile, idToken: string) {
+export async function updateUserProfile(data: Omit<Profile, 'reputation'>, idToken: string) {
     const adminApp = getFirebaseAdminApp();
      if (!adminApp) {
         return { success: false, error: "Server configuration error." };
@@ -185,7 +186,7 @@ export async function updateUserProfile(data: Profile, idToken: string) {
 
     const db = getFirestore(adminApp);
 
-    const validatedData = profileSchema.safeParse(data);
+    const validatedData = profileSchema.omit({ reputation: true }).safeParse(data);
     if (!validatedData.success) {
         return { success: false, error: "Invalid profile data." };
     }
@@ -226,6 +227,7 @@ export async function getCurrentUserProfile(): Promise<Profile | null> {
         return profileDoc.data() as Profile;
     }
     
+    // Default profile for a new user
     return {
         name: user.name || "",
         batchYear: new Date().getFullYear(),
@@ -245,21 +247,16 @@ export async function getProfileById(userId: string): Promise<(Profile & {id: st
         const db = getFirestore(adminApp);
         const profileDoc = await db.collection("users").doc(userId).get();
         
-        if (!profileDoc.exists) {
-             // Fallback for users who might not have a firestore doc yet
-            return {
-                id: userId,
-                email: userRecord.email || '',
-                photoURL: userRecord.photoURL || '',
+        const profileData = profileDoc.exists() 
+            ? profileDoc.data() as Profile 
+            : {
                 name: userRecord.displayName || 'Anonymous',
                 batchYear: new Date().getFullYear(),
                 domain: '',
                 about: '',
                 reputation: 0,
             };
-        }
 
-        const profileData = profileDoc.data() as Profile;
         return {
             id: userId,
             email: userRecord.email || '',
