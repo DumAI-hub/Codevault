@@ -127,17 +127,20 @@ export async function addProject(
     }
 
     try {
+        const userRef = db.collection("users").doc(user.uid);
+        const userProfileDoc = await userRef.get();
+        const userProfile = userProfileDoc.data() as Profile | undefined;
+
         const newProjectData = {
             ...validatedData.data,
             summary,
             authorId: user.uid,
-            authorName: user.name || user.email || 'Anonymous',
+            authorName: userProfile?.name || user.name || user.email || 'Anonymous',
             authorPhotoURL: user.picture || '',
             reputation: 0,
             createdAt: FieldValue.serverTimestamp(),
         };
 
-        const userRef = db.collection("users").doc(user.uid);
         const projectRef = db.collection("projects").doc();
 
         // Use a batch to perform atomic write
@@ -336,3 +339,4 @@ export async function getProfileById(userId: string): Promise<(Profile & {id: st
         return null;
     }
 }
+
