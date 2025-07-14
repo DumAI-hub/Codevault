@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -23,13 +24,14 @@ import { useToast } from "@/hooks/use-toast";
 import {
   type SignupData,
   type LoginData,
+  type Profile,
 } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { getCurrentUserProfile } from "@/lib/actions";
 
 interface AuthContextType {
   user: User | null;
-  profile: any | null; // A more specific type can be used here
+  profile: Profile | null;
   loading: boolean;
   loginWithGoogle: () => Promise<void>;
   signupWithEmail: (data: SignupData) => Promise<void>;
@@ -43,11 +45,44 @@ const noOpPromise = () => Promise.resolve();
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<any | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const router = useRouter();
 
+  // Handle redirect result on initial load
+  useEffect(() => {
+    if (!auth) return;
+
+    const handleRedirect = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result && result.user) {
+          toast({
+            title: "Logged In!",
+            description: `Welcome back, ${result.user.displayName}!`,
+          });
+          const userProfile = await getCurrentUserProfile();
+          if (!userProfile?.domain) {
+            router.push("/profile?setup=true");
+          } else {
+            router.push("/");
+          }
+        }
+      } catch (error) {
+        console.error("Error getting redirect result:", error);
+        toast({
+          title: "Login Failed",
+          description: "Could not complete login. Please try again.",
+          variant: "destructive",
+        });
+      }
+    };
+    
+    handleRedirect();
+  }, [router, toast]);
+
+  // Listen for auth state changes
   useEffect(() => {
     if (!auth) {
         setLoading(false);
@@ -72,28 +107,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
 
-    // Handle redirect result
-    getRedirectResult(auth)
-      .then(async (result) => {
-        if (result && result.user) {
-          toast({
-            title: "Logged In!",
-            description: `Welcome back, ${result.user.displayName}!`,
-          });
-          const userProfile = await getCurrentUserProfile();
-          if (!userProfile?.domain) { // Check if profile is incomplete
-             router.push("/profile?setup=true");
-          } else {
-             router.push("/");
-          }
-        }
-      })
-      .catch((error) => {
-        console.error("Error getting redirect result:", error);
-      });
-
     return () => unsubscribe();
-  }, [router, toast]);
+  }, []);
 
   const loginWithGoogle = async () => {
     if (!auth) return;
@@ -101,7 +116,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     try {
       await signInWithRedirect(auth, googleProvider);
-      // The user will be redirected. The result is handled in the useEffect hook.
     } catch (error) {
       const authError = error as AuthError;
       console.error("Error logging in with Google: ", authError);
@@ -127,7 +141,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Account Created!",
         description: "You have successfully signed up.",
       });
-      // Redirect to profile setup
       router.push("/profile?setup=true");
     } catch (error) {
       const authError = error as AuthError;
