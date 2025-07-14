@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useForm } from "react-hook-form";
@@ -17,8 +18,7 @@ import { Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { PartyPopper } from "lucide-react";
-
-type ProfileFormData = Profile;
+import { useAuth } from "@/hooks/use-auth";
 
 interface ProfileFormProps {
     profile: Profile | null;
@@ -27,20 +27,22 @@ interface ProfileFormProps {
 export function ProfileForm({ profile }: ProfileFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user } = useAuth();
   const isSetup = searchParams.get('setup') === 'true';
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
 
-  const form = useForm<ProfileFormData>({
+  const form = useForm<Profile>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      domain: profile?.domain || "",
+      name: profile?.name || user?.displayName || "",
       batchYear: profile?.batchYear || new Date().getFullYear(),
+      domain: profile?.domain || "",
       about: profile?.about || "",
     },
   });
 
-  function onSubmit(values: ProfileFormData) {
+  function onSubmit(values: Profile) {
     startTransition(async () => {
       const result = await updateUserProfile(values);
       if (result.success) {
@@ -77,6 +79,20 @@ export function ProfileForm({ profile }: ProfileFormProps) {
         )}
         <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Full Name</FormLabel>
+                    <FormControl>
+                        <Input placeholder="e.g., Ada Lovelace" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+            />
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <FormField
                 control={form.control}

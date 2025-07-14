@@ -78,7 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           variant: "destructive",
         });
       } finally {
-        setLoading(false);
+        // The onAuthStateChanged listener will handle setting the final loading state
       }
     };
     
@@ -125,6 +125,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       let description = "An unknown error occurred.";
       if (authError.code === 'auth/unauthorized-domain') {
           description = "This domain is not authorized for login. Please contact support.";
+      } else if (authError.code === 'auth/popup-closed-by-user') {
+          description = "Login canceled. If you are using a pop-up blocker, please disable it for this site.";
       }
       toast({
         title: "Login Failed",
