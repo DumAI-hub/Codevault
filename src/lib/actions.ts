@@ -84,11 +84,18 @@ export async function addProject(
         return { success: false, error: "Invalid data" };
     }
     
+    let summary = "";
     try {
-        const { summary } = await summarizeProjectDescription({
+        const result = await summarizeProjectDescription({
             projectDescription: validatedData.data.description,
         });
+        summary = result.summary;
+    } catch (error) {
+        console.error("AI summarization failed, but proceeding with submission:", error);
+        // We will proceed to submit the project without a summary.
+    }
 
+    try {
         const newProjectData = {
             ...validatedData.data,
             summary,
@@ -106,8 +113,8 @@ export async function addProject(
         
         return { success: true };
     } catch (error) {
-        console.error(error);
-        return { success: false, error: "Failed to create project summary." };
+        console.error("Failed to add project to Firestore:", error);
+        return { success: false, error: "Failed to save project to the database." };
     }
 }
 
@@ -143,11 +150,14 @@ export async function updateUserProfile(data: Profile, idToken: string) {
     }
     
     try {
-        // Update name in Firebase Auth first
-        await auth(adminApp).updateUser(user.uid, {
-            displayName: validatedData.data.name,
-        });
-
+        const userRecord = await auth(adminApp).getUser(user.uid);
+        // Update name in Firebase Auth first if it has changed
+        if (userRecord.displayName !== validatedData.data.name) {
+             await auth(adminApp).updateUser(user.uid, {
+                displayName: validatedData.data.name,
+            });
+        }
+       
         // Create or update the profile in the 'users' collection
         await db.collection("users").doc(user.uid).set(validatedData.data, { merge: true });
         
@@ -172,13 +182,13 @@ export async function getCurrentUserProfile(idToken: string): Promise<Profile | 
     const db = getFirestore(adminApp);
     
     const profileDoc = await db.collection("users").doc(user.uid).get();
-    const profileFromDb = profileDoc.exists ? profileDoc.data() as Profile : {};
+    const profileFromDb = profileDoc.exists ? profileDoc.data() : {};
     
     // Combine db profile with Firebase Auth profile info as a fallback
     return {
-        name: user.name || profileFromDb.name || "",
-        batchYear: profileFromDb.batchYear || new Date().getFullYear(),
-        domain: profileFromDb.domain || "",
-        about: profileFromDb.about || ""
+        name: user.name || (profileFromDb as Profile)?.name || "",
+        batchYear: (profileFromDb as Profile)?.batchYear || new Date().getFullYear(),
+        domain: (profileFromDb as Profile)?.domain || "",
+        about: (profileFromDb as Profile)?.about || ""
     };
 }
