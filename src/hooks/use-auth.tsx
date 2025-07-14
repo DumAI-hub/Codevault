@@ -89,14 +89,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           variant: "destructive",
         });
       } finally {
-        // The onAuthStateChanged listener will handle setting the final loading state
       }
     };
     
     handleRedirect();
   }, [router, toast]);
 
-  // Listen for auth state changes
   useEffect(() => {
     if (!auth) {
         setLoading(false);

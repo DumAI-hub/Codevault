@@ -4,8 +4,9 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useTransition, useEffect, useState } from "react";
+import { useTransition, useEffect } from "react";
 import { useSearchParams } from 'next/navigation'
+import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,7 +32,6 @@ interface ProfileFormProps {
     initialProfile: Profile;
 }
 
-// Create a version of the schema for the form data, which omits the reputation
 const formSchema = profileSchema.omit({ reputation: true });
 type ProfileFormData = z.infer<typeof formSchema>;
 
@@ -78,7 +78,6 @@ export function ProfileForm({ initialProfile }: ProfileFormProps) {
 
     startTransition(async () => {
       const idToken = await user.getIdToken();
-      // Pass all editable fields from the form
       const result = await updateUserProfile(values, idToken);
 
       if (result.success) {
@@ -101,7 +100,6 @@ export function ProfileForm({ initialProfile }: ProfileFormProps) {
     });
   }
 
-  // Use the reputation from the non-editable initialProfile prop
   const reputation = initialProfile.reputation || 0;
   const tier = getReputationTier(reputation);
   

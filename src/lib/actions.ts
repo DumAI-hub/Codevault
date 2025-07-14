@@ -145,11 +145,9 @@ export async function addProject(
 
         const projectRef = db.collection("projects").doc();
 
-        // Use a batch to perform atomic write
         const batch = db.batch();
         batch.set(projectRef, newProjectData);
-        // Use set with merge:true to create the doc if it doesn't exist, or update if it does.
-        batch.set(userRef, { reputation: FieldValue.increment(10) }, { merge: true }); // +10 points for submission
+        batch.set(userRef, { reputation: FieldValue.increment(10) }, { merge: true }); 
         await batch.commit();
 
         revalidatePath("/");
@@ -182,7 +180,6 @@ export async function updateProject(
     const db = getFirestore(adminApp);
     const projectRef = db.collection("projects").doc(projectId);
 
-    // Verify user is the author of the project
     const projectDoc = await projectRef.get();
     if (!projectDoc.exists || projectDoc.data()?.authorId !== user.uid) {
         return { success: false, error: "Permission denied. You can only edit your own projects." };
@@ -193,7 +190,6 @@ export async function updateProject(
         return { success: false, error: "Invalid data" };
     }
     
-    // Check if description has changed to re-summarize
     let summary;
     if (projectDoc.data()?.description !== validatedData.data.description) {
         try {
@@ -203,7 +199,6 @@ export async function updateProject(
             summary = result.summary;
         } catch (error) {
             console.error("AI summarization failed during update, but proceeding:", error);
-            // Keep old summary if new one fails
             summary = projectDoc.data()?.summary;
         }
     } else {
@@ -258,7 +253,6 @@ export async function updateUserProfile(data: Omit<Profile, 'reputation'>, idTok
 
     const db = getFirestore(adminApp);
 
-    // Validate against a schema that doesn't expect 'reputation'
     const validatedData = profileSchema.omit({ reputation: true }).safeParse(data);
     if (!validatedData.success) {
         console.error("Profile validation failed:", validatedData.error);
@@ -301,7 +295,6 @@ export async function getCurrentUserProfile(): Promise<Profile | null> {
         return profileDoc.data() as Profile;
     }
     
-    // Default profile for a new user
     return {
         name: user.name || "",
         batchYear: new Date().getFullYear(),
@@ -372,7 +365,6 @@ export async function upvoteProject(projectId: string, idToken: string) {
             const authorRef = db.collection("users").doc(project.authorId);
 
             if (project.upvoterIds?.includes(upvoterId)) {
-                // User has already upvoted, so remove upvote
                 transaction.update(projectRef, {
                     upvotes: FieldValue.increment(-1),
                     reputation: FieldValue.increment(-1),
@@ -381,7 +373,6 @@ export async function upvoteProject(projectId: string, idToken: string) {
                 transaction.set(authorRef, { reputation: FieldValue.increment(-5) }, { merge: true });
                 return { upvoted: false, newCount: (project.upvotes || 1) - 1 };
             } else {
-                // New upvote
                 transaction.update(projectRef, {
                     upvotes: FieldValue.increment(1),
                     reputation: FieldValue.increment(1),
