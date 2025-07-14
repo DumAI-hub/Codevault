@@ -1,6 +1,6 @@
 
 import { notFound } from "next/navigation";
-import { getProfileById, getProjectsByAuthor } from "@/lib/actions";
+import { getProfileById } from "@/lib/actions";
 import { Header } from "@/components/Header";
 import { UserProjects } from "@/components/UserProjects";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,7 +43,7 @@ export default async function UserProfilePage({ params }: { params: { id: string
                         <div className="flex items-center gap-4 my-4">
                             <div className="flex items-center gap-1 text-yellow-500">
                                 <Star className="h-5 w-5" />
-                                <span className="font-bold text-lg">{profile.reputation}</span>
+                                <span className="font-bold text-lg">{profile.reputation || 0}</span>
                             </div>
                             <Badge className={`${tier.color} text-white`}>{tier.name}</Badge>
                         </div>
