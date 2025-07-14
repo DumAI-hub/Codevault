@@ -63,6 +63,9 @@ export const profileSchema = z.object({
   domain: z.string().min(2, "Domain must be at least 2 characters long"),
   about: z.string().min(10, "Must be at least 10 characters").max(500, "Cannot exceed 500 characters").optional().or(z.literal('')),
   reputation: z.number().default(0),
+  linkedinUrl: z.string().url("Please enter a valid LinkedIn URL").optional().or(z.literal('')),
+  githubUrl: z.string().url("Please enter a valid GitHub URL").optional().or(z.literal('')),
+  websiteUrl: z.string().url("Please enter a valid URL").optional().or(z.literal('')),
 });
 
 export type Profile = z.infer<typeof profileSchema>;

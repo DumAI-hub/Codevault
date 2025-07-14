@@ -244,7 +244,7 @@ export async function getGithubSummary(githubLink: string) {
     }
 }
 
-export async function updateUserProfile(data: Omit<Profile, 'reputation'>, idToken: string) {
+export async function updateUserProfile(data: Profile, idToken: string) {
     const adminApp = getFirebaseAdminApp();
      if (!adminApp) {
         return { success: false, error: "Server configuration error." };
@@ -258,7 +258,7 @@ export async function updateUserProfile(data: Omit<Profile, 'reputation'>, idTok
 
     const db = getFirestore(adminApp);
 
-    const validatedData = profileSchema.omit({ reputation: true }).safeParse(data);
+    const validatedData = profileSchema.safeParse(data);
     if (!validatedData.success) {
         return { success: false, error: "Invalid profile data." };
     }
@@ -306,6 +306,9 @@ export async function getCurrentUserProfile(): Promise<Profile | null> {
         domain: "",
         about: "",
         reputation: 0,
+        linkedinUrl: "",
+        githubUrl: "",
+        websiteUrl: "",
     };
 }
 

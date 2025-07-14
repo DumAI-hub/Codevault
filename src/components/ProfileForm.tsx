@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { profileSchema, type Profile } from "@/lib/types";
 import { updateUserProfile } from "@/lib/actions";
 import { Loader2, PartyPopper, Star } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useAuth } from "@/hooks/use-auth";
 import { Badge } from "./ui/badge";
@@ -57,14 +57,8 @@ export function ProfileForm({ initialProfile }: ProfileFormProps) {
 
     startTransition(async () => {
       const idToken = await user.getIdToken();
-      // We only pass the fields that can be edited by the user
-      const result = await updateUserProfile({
-        name: values.name,
-        batchYear: values.batchYear,
-        domain: values.domain,
-        about: values.about,
-        reputation: values.reputation, // Pass current reputation to avoid accidental override
-      }, idToken);
+      // Pass all editable fields from the form
+      const result = await updateUserProfile(values, idToken);
 
       if (result.success) {
         toast({
@@ -93,7 +87,10 @@ export function ProfileForm({ initialProfile }: ProfileFormProps) {
     <Card>
       <CardHeader>
         <div className="flex justify-between items-start">
-            <CardTitle>Edit Information</CardTitle>
+            <div>
+                <CardTitle>Edit Information</CardTitle>
+                <CardDescription>Update your personal and professional details.</CardDescription>
+            </div>
             <div className="flex items-center gap-3">
                  <div className="flex items-center gap-1 text-yellow-500">
                     <Star className="h-5 w-5" />
@@ -175,6 +172,51 @@ export function ProfileForm({ initialProfile }: ProfileFormProps) {
                 </FormItem>
             )}
             />
+
+            <div>
+                <h3 className="text-lg font-medium mb-4">Social Links</h3>
+                <div className="space-y-6">
+                    <FormField
+                    control={form.control}
+                    name="linkedinUrl"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>LinkedIn URL</FormLabel>
+                        <FormControl>
+                            <Input placeholder="https://linkedin.com/in/..." {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                     <FormField
+                    control={form.control}
+                    name="githubUrl"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>GitHub URL</FormLabel>
+                        <FormControl>
+                            <Input placeholder="https://github.com/..." {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                     <FormField
+                    control={form.control}
+                    name="websiteUrl"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Personal Website URL</FormLabel>
+                        <FormControl>
+                            <Input placeholder="https://your-site.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                </div>
+            </div>
 
             <Button type="submit" disabled={isPending}>
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

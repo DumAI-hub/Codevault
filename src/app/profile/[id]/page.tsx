@@ -5,8 +5,9 @@ import { Header } from "@/components/Header";
 import { UserProjects } from "@/components/UserProjects";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { UserCircle, Star, Calendar, Briefcase } from "lucide-react";
+import { UserCircle, Star, Calendar, Briefcase, Linkedin, Github, Globe } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 const getReputationTier = (reputation: number) => {
     if (reputation >= 300) return { name: "Mentor", color: "bg-purple-500" };
@@ -29,7 +30,7 @@ export default async function UserProfilePage({ params }: { params: { id: string
       <Header />
       <main className="container mx-auto max-w-4xl px-4 py-8">
          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-1">
+            <div className="lg:col-span-1 space-y-6">
                 <Card>
                     <CardContent className="p-6 flex flex-col items-center text-center">
                         <Avatar className="h-24 w-24 mb-4">
@@ -58,10 +59,28 @@ export default async function UserProfilePage({ params }: { params: { id: string
                             </div>
                         </div>
 
+                         <div className="flex items-center justify-center gap-3 mt-6">
+                            {profile.linkedinUrl && (
+                                <Button variant="outline" size="icon" asChild>
+                                    <a href={profile.linkedinUrl} target="_blank" rel="noopener noreferrer"><Linkedin className="h-4 w-4"/></a>
+                                </Button>
+                            )}
+                            {profile.githubUrl && (
+                                <Button variant="outline" size="icon" asChild>
+                                    <a href={profile.githubUrl} target="_blank" rel="noopener noreferrer"><Github className="h-4 w-4"/></a>
+                                </Button>
+                            )}
+                            {profile.websiteUrl && (
+                                <Button variant="outline" size="icon" asChild>
+                                    <a href={profile.websiteUrl} target="_blank" rel="noopener noreferrer"><Globe className="h-4 w-4"/></a>
+                                </Button>
+                            )}
+                        </div>
+
                     </CardContent>
                 </Card>
                  {profile.about && (
-                    <Card className="mt-8">
+                    <Card>
                         <CardHeader>
                             <CardTitle>About</CardTitle>
                         </CardHeader>
