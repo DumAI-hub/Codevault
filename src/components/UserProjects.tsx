@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { getProjectsByAuthor } from "@/lib/actions";
 import { type Project } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
-import { Loader2 } from "lucide-react";
+import { Loader2, Star } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "./ui/badge";
 

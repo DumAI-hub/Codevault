@@ -13,11 +13,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { profileSchema, type Profile } from "@/lib/types";
-import { updateUserProfile, getCurrentUserProfile } from "@/lib/actions";
+import { updateUserProfile } from "@/lib/actions";
 import { Loader2, PartyPopper, Star } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
 import { Badge } from "./ui/badge";
 
@@ -28,51 +27,26 @@ const getReputationTier = (reputation: number) => {
     return { name: "Newbie", color: "bg-gray-500" };
 };
 
+interface ProfileFormProps {
+    initialProfile: Profile;
+}
 
-export function ProfileForm() {
+export function ProfileForm({ initialProfile }: ProfileFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, profile, loading } = useAuth();
+  const { user } = useAuth();
   const isSetup = searchParams.get('setup') === 'true';
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
-  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
 
   const form = useForm<Profile>({
     resolver: zodResolver(profileSchema),
-    defaultValues: {
-      name: "",
-      batchYear: new Date().getFullYear(),
-      domain: "",
-      about: "",
-      reputation: 0,
-    },
+    defaultValues: initialProfile,
   });
 
   useEffect(() => {
-    async function fetchProfile() {
-      if (!user) return;
-      setIsLoadingProfile(true);
-      try {
-        const idToken = await user.getIdToken();
-        const serverProfile = await getCurrentUserProfile(idToken);
-        if (serverProfile) {
-          form.reset(serverProfile);
-        } else {
-           form.setValue('name', user.displayName || '');
-        }
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "Could not fetch your profile data.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoadingProfile(false);
-      }
-    }
-    fetchProfile();
-  }, [user, form, toast]);
+    form.reset(initialProfile);
+  }, [initialProfile, form]);
 
 
   async function onSubmit(values: Profile) {
@@ -115,22 +89,6 @@ export function ProfileForm() {
   const reputation = form.watch('reputation');
   const tier = getReputationTier(reputation);
   
-  if (isLoadingProfile || loading) {
-    return (
-        <Card>
-            <CardContent className="p-6 space-y-8">
-                <Skeleton className="h-8 w-1/3" />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-10 w-full" />
-                </div>
-                <Skeleton className="h-24 w-full" />
-                <Skeleton className="h-10 w-32" />
-            </CardContent>
-        </Card>
-    );
-  }
-
   return (
     <Card>
       <CardHeader>

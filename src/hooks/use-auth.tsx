@@ -43,6 +43,17 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const noOpPromise = () => Promise.resolve();
 
+async function fetchProfileData() {
+    try {
+      const userProfile = await getCurrentUserProfile();
+      return userProfile;
+    } catch (error) {
+      console.error("Failed to fetch user profile", error);
+      return null;
+    }
+}
+
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -63,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             title: "Logged In!",
             description: `Welcome back, ${result.user.displayName}!`,
           });
-          const userProfile = await getCurrentUserProfile();
+          const userProfile = await fetchProfileData();
           if (!userProfile?.domain) {
             router.push("/profile?setup=true");
           } else {
@@ -96,13 +107,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       if (user) {
         setUser(user);
-        try {
-          const userProfile = await getCurrentUserProfile();
-          setProfile(userProfile);
-        } catch (error) {
-          console.error("Failed to fetch user profile", error);
-          setProfile(null);
-        }
+        const userProfile = await fetchProfileData();
+        setProfile(userProfile);
       } else {
         setUser(null);
         setProfile(null);

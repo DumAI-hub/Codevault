@@ -2,6 +2,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { auth } from "firebase-admin";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { getFirebaseAdminApp } from "./firebase-admin";
@@ -10,10 +11,11 @@ import { summarizeGithubRepo } from "@/ai/flows/summarize-github-repo";
 import type { Project, Profile } from "./types";
 import { projectSchema, profileSchema } from "./types";
 
-async function getAuthenticatedUser(idToken: string) {
+async function getAuthenticatedUser() {
     const adminApp = getFirebaseAdminApp();
     if (!adminApp) return null;
 
+    const idToken = cookies().get('idToken')?.value;
     if (!idToken) {
         return null;
     }
@@ -96,15 +98,17 @@ export async function addProject(
     data: Omit<Project, 'id' | 'summary' | 'authorId' | 'authorName' | 'authorPhotoURL' | 'reputation' | 'createdAt'>,
     idToken: string
 ) {
-    const user = await getAuthenticatedUser(idToken);
-    if (!user) {
-        return { success: false, error: "Authentication required." };
-    }
-
     const adminApp = getFirebaseAdminApp();
     if (!adminApp) {
         return { success: false, error: "Server configuration error." };
     }
+    
+    const decodedToken = await auth(adminApp).verifyIdToken(idToken);
+    if (!decodedToken) {
+        return { success: false, error: "Authentication required." };
+    }
+    const user = decodedToken;
+
     const db = getFirestore(adminApp);
 
     const validatedData = projectSchema.omit({ id: true, summary: true, authorId: true, authorName: true, authorPhotoURL: true, reputation: true, createdAt: true }).safeParse(data);
@@ -168,15 +172,17 @@ export async function getGithubSummary(githubLink: string) {
 }
 
 export async function updateUserProfile(data: Profile, idToken: string) {
-    const user = await getAuthenticatedUser(idToken);
-    if (!user) {
-        return { success: false, error: "Authentication required." };
-    }
-    
     const adminApp = getFirebaseAdminApp();
      if (!adminApp) {
         return { success: false, error: "Server configuration error." };
     }
+    
+    const decodedToken = await auth(adminApp).verifyIdToken(idToken);
+    if (!decodedToken) {
+        return { success: false, error: "Authentication required." };
+    }
+    const user = decodedToken;
+
     const db = getFirestore(adminApp);
 
     const validatedData = profileSchema.safeParse(data);
@@ -204,8 +210,8 @@ export async function updateUserProfile(data: Profile, idToken: string) {
     }
 }
 
-export async function getCurrentUserProfile(idToken: string): Promise<Profile | null> {
-    const user = await getAuthenticatedUser(idToken);
+export async function getCurrentUserProfile(): Promise<Profile | null> {
+    const user = await getAuthenticatedUser();
     if (!user) {
         return null;
     }
