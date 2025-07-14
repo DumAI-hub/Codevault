@@ -31,6 +31,11 @@ interface ProfileFormProps {
     initialProfile: Profile;
 }
 
+// Create a version of the schema for the form data, which omits the reputation
+const formSchema = profileSchema.omit({ reputation: true });
+type ProfileFormData = z.infer<typeof formSchema>;
+
+
 export function ProfileForm({ initialProfile }: ProfileFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -39,17 +44,33 @@ export function ProfileForm({ initialProfile }: ProfileFormProps) {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
 
-  const form = useForm<Profile>({
-    resolver: zodResolver(profileSchema),
-    defaultValues: initialProfile,
+  const form = useForm<ProfileFormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+        name: initialProfile.name || '',
+        batchYear: initialProfile.batchYear || new Date().getFullYear(),
+        domain: initialProfile.domain || '',
+        about: initialProfile.about || '',
+        linkedinUrl: initialProfile.linkedinUrl || '',
+        githubUrl: initialProfile.githubUrl || '',
+        websiteUrl: initialProfile.websiteUrl || '',
+    },
   });
 
   useEffect(() => {
-    form.reset(initialProfile);
+    form.reset({
+        name: initialProfile.name || '',
+        batchYear: initialProfile.batchYear || new Date().getFullYear(),
+        domain: initialProfile.domain || '',
+        about: initialProfile.about || '',
+        linkedinUrl: initialProfile.linkedinUrl || '',
+        githubUrl: initialProfile.githubUrl || '',
+        websiteUrl: initialProfile.websiteUrl || '',
+    });
   }, [initialProfile, form]);
 
 
-  async function onSubmit(values: Profile) {
+  async function onSubmit(values: ProfileFormData) {
     if (!user) {
         toast({ title: "Not Authenticated", description: "You must be logged in.", variant: "destructive" });
         return;
@@ -80,7 +101,8 @@ export function ProfileForm({ initialProfile }: ProfileFormProps) {
     });
   }
 
-  const reputation = form.watch('reputation');
+  // Use the reputation from the non-editable initialProfile prop
+  const reputation = initialProfile.reputation || 0;
   const tier = getReputationTier(reputation);
   
   return (

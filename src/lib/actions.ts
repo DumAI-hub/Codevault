@@ -244,7 +244,7 @@ export async function getGithubSummary(githubLink: string) {
     }
 }
 
-export async function updateUserProfile(data: Profile, idToken: string) {
+export async function updateUserProfile(data: Omit<Profile, 'reputation'>, idToken: string) {
     const adminApp = getFirebaseAdminApp();
      if (!adminApp) {
         return { success: false, error: "Server configuration error." };
@@ -258,8 +258,10 @@ export async function updateUserProfile(data: Profile, idToken: string) {
 
     const db = getFirestore(adminApp);
 
-    const validatedData = profileSchema.safeParse(data);
+    // Validate against a schema that doesn't expect 'reputation'
+    const validatedData = profileSchema.omit({ reputation: true }).safeParse(data);
     if (!validatedData.success) {
+        console.error("Profile validation failed:", validatedData.error);
         return { success: false, error: "Invalid profile data." };
     }
     
@@ -274,7 +276,7 @@ export async function updateUserProfile(data: Profile, idToken: string) {
         await db.collection("users").doc(user.uid).set(validatedData.data, { merge: true });
         
         revalidatePath("/profile");
-        revalidatePath("/");
+        revalidatePath(`/profile/${user.uid}`);
 
         return { success: true };
     } catch (error) {
@@ -330,6 +332,9 @@ export async function getProfileById(userId: string): Promise<(Profile & {id: st
                 domain: '',
                 about: '',
                 reputation: 0,
+                linkedinUrl: "",
+                githubUrl: "",
+                websiteUrl: "",
             };
 
         return {
@@ -411,6 +416,8 @@ export async function addCommentToProject(projectId: string, text: string, idTok
     const db = getFirestore(adminApp);
     const projectRef = db.collection("projects").doc(projectId);
     const commentRef = projectRef.collection("comments").doc();
+    const authorRef = db.collection("users").doc(decodedToken.uid);
+
 
     const newComment = {
         id: commentRef.id,
@@ -423,7 +430,12 @@ export async function addCommentToProject(projectId: string, text: string, idTok
     };
 
     try {
-        await commentRef.set(newComment);
+        const batch = db.batch();
+        batch.set(commentRef, newComment);
+        batch.set(authorRef, { reputation: FieldValue.increment(1) }, { merge: true });
+        
+        await batch.commit();
+
         revalidatePath(`/project/${projectId}`);
         return { success: true };
     } catch (error) {
