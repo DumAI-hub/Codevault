@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useForm } from "react-hook-form";
@@ -13,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { projectSchema, type Project } from "@/lib/types";
 import { addProject } from "@/lib/actions";
 import { Loader2 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
 type ProjectFormData = Omit<Project, 'id' | 'summary' | 'authorId' | 'authorName' | 'authorPhotoURL' | 'reputation'>;
 
@@ -30,6 +32,7 @@ export function ProjectForm() {
   const router = useRouter();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
+  const { user } = useAuth();
 
   const form = useForm<ProjectFormData>({
     resolver: zodResolver(projectFormSchema),
@@ -46,7 +49,18 @@ export function ProjectForm() {
 
   function onSubmit(values: ProjectFormData) {
     startTransition(async () => {
-      const result = await addProject(values);
+      if (!user) {
+        toast({
+            title: "Authentication Error",
+            description: "You must be logged in to submit a project.",
+            variant: "destructive",
+        });
+        return;
+      }
+        
+      const idToken = await user.getIdToken();
+      const result = await addProject(values, idToken);
+
       if (result.success) {
         toast({
           title: "Project Submitted!",

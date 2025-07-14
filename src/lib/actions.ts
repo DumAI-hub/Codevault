@@ -2,7 +2,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
 import { auth } from "firebase-admin";
 import { getFirebaseAdminApp } from "./firebase-admin";
 import { summarizeProjectDescription } from "@/ai/flows/summarize-project-description";
@@ -74,20 +73,14 @@ const projectsDb: Project[] = [
 ];
 
 const userProfilesDb: Record<string, Profile> = {
-    'user1': { batchYear: 2024, domain: "Computer Science", about: "I am a passionate developer who loves building things for the web."},
-    'user2': { batchYear: 2023, domain: "Software Engineering", about: "I enjoy backend systems and database architecture."},
-    'user3': { batchYear: 2023, domain: "Artificial Intelligence", about: "Exploring the frontiers of machine learning."},
+    'user1': { name: "Ada Lovelace", batchYear: 2024, domain: "Computer Science", about: "I am a passionate developer who loves building things for the web."},
+    'user2': { name: "Grace Hopper", batchYear: 2023, domain: "Software Engineering", about: "I enjoy backend systems and database architecture."},
+    'user3': { name: "Alan Turing", batchYear: 2023, domain: "Artificial Intelligence", about: "Exploring the frontiers of machine learning."},
 }
 
-async function getAuthenticatedUser() {
+async function getAuthenticatedUser(idToken: string) {
     const adminApp = getFirebaseAdminApp();
     if (!adminApp) return null;
-
-    const idToken = headers().get("Authorization")?.split("Bearer ")[1];
-    if (!idToken) {
-        console.error("Authorization header not found.");
-        return null;
-    }
 
     try {
         const decodedToken = await auth(adminApp).verifyIdToken(idToken);
@@ -109,9 +102,10 @@ export async function getProjectById(id: string): Promise<Project | undefined> {
 }
 
 export async function addProject(
-    data: Omit<Project, 'id' | 'summary' | 'authorId' | 'authorName' | 'authorPhotoURL' | 'reputation'>
+    data: Omit<Project, 'id' | 'summary' | 'authorId' | 'authorName' | 'authorPhotoURL' | 'reputation'>,
+    idToken: string
 ) {
-    const user = await getAuthenticatedUser();
+    const user = await getAuthenticatedUser(idToken);
     if (!user) {
         return { success: false, error: "Authentication required." };
     }
@@ -163,8 +157,8 @@ export async function getGithubSummary(githubLink: string) {
     }
 }
 
-export async function updateUserProfile(data: Profile) {
-    const user = await getAuthenticatedUser();
+export async function updateUserProfile(data: Omit<Profile, 'name'>, idToken: string) {
+    const user = await getAuthenticatedUser(idToken);
     if (!user) {
         return { success: false, error: "Authentication required." };
     }
@@ -174,18 +168,16 @@ export async function updateUserProfile(data: Profile) {
         return { success: false, error: "Server configuration error." };
     }
 
-    const validatedData = profileSchema.safeParse(data);
+    // name is now omitted, as it's part of the form, not the db model for this part
+    const validatedData = profileSchema.omit({name: true}).safeParse(data);
     if (!validatedData.success) {
         return { success: false, error: "Invalid profile data." };
     }
     
     try {
         // In a real app, you'd save this to a database like Firestore
-        userProfilesDb[user.uid] = validatedData.data;
-
-        await auth(adminApp).updateUser(user.uid, {
-            displayName: user.name // You can extend this to update more fields if needed
-        });
+        const currentProfile = userProfilesDb[user.uid] || {};
+        userProfilesDb[user.uid] = { ...currentProfile, ...validatedData.data };
         
         revalidatePath("/profile");
         revalidatePath("/"); // Revalidate home page in case author names are shown there
@@ -197,11 +189,56 @@ export async function updateUserProfile(data: Profile) {
     }
 }
 
-export async function getCurrentUserProfile(): Promise<Profile | null> {
-    const user = await getAuthenticatedUser();
+export async function updateUserProfileName(name: string, idToken: string) {
+    const user = await getAuthenticatedUser(idToken);
+    if (!user) {
+        return { success: false, error: "Authentication required." };
+    }
+
+    const adminApp = getFirebaseAdminApp();
+    if (!adminApp) {
+        return { success: false, error: "Server configuration error." };
+    }
+
+    if (!name || name.length < 2) {
+        return { success: false, error: "Name must be at least 2 characters long." };
+    }
+
+    try {
+        // Update name in Firebase Auth
+        await auth(adminApp).updateUser(user.uid, {
+            displayName: name,
+        });
+
+        // Update name in our mock DB
+        const currentProfile = userProfilesDb[user.uid] || {};
+        userProfilesDb[user.uid] = { ...currentProfile, name: name };
+
+        revalidatePath("/profile");
+        // Revalidate other paths where the name might be displayed
+        revalidatePath("/");
+
+        return { success: true };
+    } catch (error) {
+        console.error("Error updating profile name:", error);
+        return { success: false, error: "Failed to update profile name." };
+    }
+}
+
+
+export async function getCurrentUserProfile(idToken: string): Promise<Profile | null> {
+    const user = await getAuthenticatedUser(idToken);
     if (!user) {
         return null;
     }
     // In a real app, you would fetch this from your database
-    return userProfilesDb[user.uid] || null;
+    const profile = userProfilesDb[user.uid] || {};
+    
+    // Combine db profile with Firebase Auth profile info
+    return {
+        name: user.name || '',
+        batchYear: profile.batchYear || 0,
+        domain: profile.domain || '',
+        about: profile.about || ''
+    };
 }
