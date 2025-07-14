@@ -56,6 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const handleRedirect = async () => {
       try {
+        setLoading(true);
         const result = await getRedirectResult(auth);
         if (result && result.user) {
           toast({
@@ -76,6 +77,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           description: "Could not complete login. Please try again.",
           variant: "destructive",
         });
+      } finally {
+        setLoading(false);
       }
     };
     
