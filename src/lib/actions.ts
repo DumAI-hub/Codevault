@@ -317,7 +317,7 @@ export async function getProfileById(userId: string): Promise<(Profile & {id: st
         const db = getFirestore(adminApp);
         const profileDoc = await db.collection("users").doc(userId).get();
         
-        const profileData = profileDoc.exists() 
+        const profileData = profileDoc.exists
             ? profileDoc.data() as Profile 
             : {
                 name: userRecord.displayName || 'Anonymous',
@@ -339,4 +339,5 @@ export async function getProfileById(userId: string): Promise<(Profile & {id: st
         return null;
     }
 }
+
 
