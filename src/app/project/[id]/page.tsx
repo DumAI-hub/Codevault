@@ -9,6 +9,8 @@ import { Github, Link as LinkIcon, CalendarDays, ArrowLeft, UserCircle } from "l
 import Link from "next/link";
 import { GithubSummary } from "@/components/GithubSummary";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ProjectInteractions } from "@/components/ProjectInteractions";
+import { ProjectComments } from "@/components/ProjectComments";
 
 export default async function ProjectDetailsPage({ params }: { params: { id: string } }) {
   const project = await getProjectById(params.id);
@@ -37,11 +39,16 @@ export default async function ProjectDetailsPage({ params }: { params: { id: str
           <div className="md:col-span-2 space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="text-3xl">{project.title}</CardTitle>
-                <CardDescription className="flex items-center gap-2 pt-1">
-                  <CalendarDays className="h-4 w-4" />
-                  <span>{project.domain} - {project.batchYear}</span>
-                </CardDescription>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle className="text-3xl">{project.title}</CardTitle>
+                    <CardDescription className="flex items-center gap-2 pt-1">
+                      <CalendarDays className="h-4 w-4" />
+                      <span>{project.domain} - {project.batchYear}</span>
+                    </CardDescription>
+                  </div>
+                   <ProjectInteractions project={project} />
+                </div>
               </CardHeader>
               <CardContent>
                 <p className="text-foreground/90 mb-6">
@@ -59,6 +66,8 @@ export default async function ProjectDetailsPage({ params }: { params: { id: str
             {project.githubLink && (
               <GithubSummary githubLink={project.githubLink} />
             )}
+
+            <ProjectComments projectId={project.id!} />
 
           </div>
 

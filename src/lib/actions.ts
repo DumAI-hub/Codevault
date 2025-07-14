@@ -8,7 +8,7 @@ import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { getFirebaseAdminApp } from "./firebase-admin";
 import { summarizeProjectDescription } from "@/ai/flows/summarize-project-description";
 import { summarizeGithubRepo } from "@/ai/flows/summarize-github-repo";
-import type { Project, Profile } from "./types";
+import type { Project, Profile, Comment } from "./types";
 import { projectSchema, profileSchema } from "./types";
 
 async function getAuthenticatedUser() {
@@ -95,7 +95,7 @@ export async function getProjectById(id: string): Promise<Project | undefined> {
 }
 
 export async function addProject(
-    data: Omit<Project, 'id' | 'summary' | 'authorId' | 'authorName' | 'authorPhotoURL' | 'reputation' | 'createdAt'>,
+    data: Omit<Project, 'id' | 'summary' | 'authorId' | 'authorName' | 'authorPhotoURL' | 'reputation' | 'upvotes' | 'upvoterIds' | 'createdAt'>,
     idToken: string
 ) {
     const adminApp = getFirebaseAdminApp();
@@ -111,7 +111,7 @@ export async function addProject(
 
     const db = getFirestore(adminApp);
 
-    const validatedData = projectSchema.omit({ id: true, summary: true, authorId: true, authorName: true, authorPhotoURL: true, reputation: true, createdAt: true }).safeParse(data);
+    const validatedData = projectSchema.omit({ id: true, summary: true, authorId: true, authorName: true, authorPhotoURL: true, reputation: true, upvotes: true, upvoterIds: true, createdAt: true }).safeParse(data);
     if (!validatedData.success) {
         return { success: false, error: "Invalid data" };
     }
@@ -138,6 +138,8 @@ export async function addProject(
             authorName: userProfile?.name || user.name || user.email || 'Anonymous',
             authorPhotoURL: user.picture || '',
             reputation: 0,
+            upvotes: 0,
+            upvoterIds: [],
             createdAt: FieldValue.serverTimestamp(),
         };
 
@@ -163,7 +165,7 @@ export async function addProject(
 
 export async function updateProject(
     projectId: string,
-    data: Omit<Project, 'id' | 'summary' | 'authorId' | 'authorName' | 'authorPhotoURL' | 'reputation' | 'createdAt'>,
+    data: Omit<Project, 'id' | 'summary' | 'authorId' | 'authorName' | 'authorPhotoURL' | 'reputation' | 'upvotes' | 'upvoterIds' | 'createdAt'>,
     idToken: string
 ) {
     const adminApp = getFirebaseAdminApp();
@@ -186,7 +188,7 @@ export async function updateProject(
         return { success: false, error: "Permission denied. You can only edit your own projects." };
     }
 
-    const validatedData = projectSchema.omit({ id: true, summary: true, authorId: true, authorName: true, authorPhotoURL: true, reputation: true, createdAt: true }).safeParse(data);
+    const validatedData = projectSchema.omit({ id: true, summary: true, authorId: true, authorName: true, authorPhotoURL: true, reputation: true, upvotes: true, upvoterIds: true, createdAt: true }).safeParse(data);
     if (!validatedData.success) {
         return { success: false, error: "Invalid data" };
     }
@@ -340,4 +342,114 @@ export async function getProfileById(userId: string): Promise<(Profile & {id: st
     }
 }
 
+export async function upvoteProject(projectId: string, idToken: string) {
+    const adminApp = getFirebaseAdminApp();
+    if (!adminApp) return { success: false, error: "Server configuration error." };
 
+    const decodedToken = await auth(adminApp).verifyIdToken(idToken);
+    if (!decodedToken) return { success: false, error: "Authentication required." };
+    
+    const db = getFirestore(adminApp);
+    const projectRef = db.collection("projects").doc(projectId);
+    const upvoterId = decodedToken.uid;
+
+    try {
+        const result = await db.runTransaction(async (transaction) => {
+            const projectDoc = await transaction.get(projectRef);
+            if (!projectDoc.exists) {
+                throw new Error("Project not found");
+            }
+
+            const project = projectDoc.data() as Project;
+            const authorRef = db.collection("users").doc(project.authorId);
+
+            if (project.upvoterIds?.includes(upvoterId)) {
+                // User has already upvoted, so remove upvote
+                transaction.update(projectRef, {
+                    upvotes: FieldValue.increment(-1),
+                    reputation: FieldValue.increment(-1),
+                    upvoterIds: FieldValue.arrayRemove(upvoterId),
+                });
+                transaction.set(authorRef, { reputation: FieldValue.increment(-5) }, { merge: true });
+                return { upvoted: false, newCount: (project.upvotes || 1) - 1 };
+            } else {
+                // New upvote
+                transaction.update(projectRef, {
+                    upvotes: FieldValue.increment(1),
+                    reputation: FieldValue.increment(1),
+                    upvoterIds: FieldValue.arrayUnion(upvoterId),
+                });
+                transaction.set(authorRef, { reputation: FieldValue.increment(5) }, { merge: true });
+                return { upvoted: true, newCount: (project.upvotes || 0) + 1 };
+            }
+        });
+        
+        revalidatePath(`/project/${projectId}`);
+        revalidatePath(`/profile/${projectRef.id}`);
+        return { success: true, ...result };
+
+    } catch (error) {
+        console.error("Upvote transaction failed:", error);
+        return { success: false, error: "An unexpected error occurred." };
+    }
+}
+
+export async function addCommentToProject(projectId: string, text: string, idToken: string) {
+    const adminApp = getFirebaseAdminApp();
+    if (!adminApp) return { success: false, error: "Server configuration error." };
+
+    const decodedToken = await auth(adminApp).verifyIdToken(idToken);
+    if (!decodedToken) return { success: false, error: "Authentication required." };
+
+    if (!text || text.trim().length === 0) {
+        return { success: false, error: "Comment cannot be empty." };
+    }
+
+    const db = getFirestore(adminApp);
+    const projectRef = db.collection("projects").doc(projectId);
+    const commentRef = projectRef.collection("comments").doc();
+
+    const newComment = {
+        id: commentRef.id,
+        text,
+        authorId: decodedToken.uid,
+        authorName: decodedToken.name || "Anonymous",
+        authorPhotoURL: decodedToken.picture || "",
+        projectId,
+        createdAt: FieldValue.serverTimestamp(),
+    };
+
+    try {
+        await commentRef.set(newComment);
+        revalidatePath(`/project/${projectId}`);
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to add comment:", error);
+        return { success: false, error: "Could not post comment." };
+    }
+}
+
+export async function getCommentsForProject(projectId: string): Promise<Comment[]> {
+    const adminApp = getFirebaseAdminApp();
+    if (!adminApp) return [];
+
+    const db = getFirestore(adminApp);
+    const commentsSnapshot = await db
+        .collection("projects")
+        .doc(projectId)
+        .collection("comments")
+        .orderBy("createdAt", "desc")
+        .get();
+
+    const comments: Comment[] = [];
+    commentsSnapshot.forEach((doc) => {
+        const data = doc.data();
+        comments.push({
+            id: doc.id,
+            ...data,
+            createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
+        } as Comment);
+    });
+
+    return comments;
+}

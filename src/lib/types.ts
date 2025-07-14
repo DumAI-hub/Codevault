@@ -17,10 +17,25 @@ export const projectSchema = z.object({
   authorName: z.string(),
   authorPhotoURL: z.string().url().or(z.literal('')),
   reputation: z.number().default(0),
+  upvotes: z.number().default(0),
+  upvoterIds: z.array(z.string()).default([]),
   createdAt: z.string().optional(), // Stored as a timestamp, retrieved as an ISO string
 });
 
 export type Project = z.infer<typeof projectSchema>;
+
+export const commentSchema = z.object({
+  id: z.string(),
+  text: z.string().min(1, "Comment cannot be empty"),
+  authorId: z.string(),
+  authorName: z.string(),
+  authorPhotoURL: z.string().url().or(z.literal('')),
+  projectId: z.string(),
+  createdAt: z.string(),
+});
+
+export type Comment = z.infer<typeof commentSchema>;
+
 
 export const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
