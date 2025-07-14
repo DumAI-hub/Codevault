@@ -158,6 +158,73 @@ export async function addProject(
     }
 }
 
+export async function updateProject(
+    projectId: string,
+    data: Omit<Project, 'id' | 'summary' | 'authorId' | 'authorName' | 'authorPhotoURL' | 'reputation' | 'createdAt'>,
+    idToken: string
+) {
+    const adminApp = getFirebaseAdminApp();
+    if (!adminApp) {
+        return { success: false, error: "Server configuration error." };
+    }
+    
+    const decodedToken = await auth(adminApp).verifyIdToken(idToken);
+    if (!decodedToken) {
+        return { success: false, error: "Authentication required." };
+    }
+    const user = decodedToken;
+
+    const db = getFirestore(adminApp);
+    const projectRef = db.collection("projects").doc(projectId);
+
+    // Verify user is the author of the project
+    const projectDoc = await projectRef.get();
+    if (!projectDoc.exists || projectDoc.data()?.authorId !== user.uid) {
+        return { success: false, error: "Permission denied. You can only edit your own projects." };
+    }
+
+    const validatedData = projectSchema.omit({ id: true, summary: true, authorId: true, authorName: true, authorPhotoURL: true, reputation: true, createdAt: true }).safeParse(data);
+    if (!validatedData.success) {
+        return { success: false, error: "Invalid data" };
+    }
+    
+    // Check if description has changed to re-summarize
+    let summary;
+    if (projectDoc.data()?.description !== validatedData.data.description) {
+        try {
+            const result = await summarizeProjectDescription({
+                projectDescription: validatedData.data.description,
+            });
+            summary = result.summary;
+        } catch (error) {
+            console.error("AI summarization failed during update, but proceeding:", error);
+            // Keep old summary if new one fails
+            summary = projectDoc.data()?.summary;
+        }
+    } else {
+        summary = projectDoc.data()?.summary;
+    }
+
+
+    try {
+        const updatedProjectData = {
+            ...validatedData.data,
+            summary,
+        };
+
+        await projectRef.update(updatedProjectData);
+
+        revalidatePath(`/project/${projectId}`);
+        revalidatePath(`/profile/${user.uid}`);
+        
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to update project in Firestore:", error);
+        return { success: false, error: "Failed to save project to the database." };
+    }
+}
+
+
 export async function getGithubSummary(githubLink: string) {
     if (!githubLink) {
         return { success: false, error: "No GitHub link provided." };
