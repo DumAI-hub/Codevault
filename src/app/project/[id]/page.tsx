@@ -2,6 +2,7 @@
 import { notFound } from "next/navigation";
 import { getProjectById, getProfileById } from "@/lib/actions";
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,9 +24,9 @@ export default async function ProjectDetailsPage({ params }: { params: { id: str
   const techStack = project.techStack.split(',').map(tech => tech.trim());
 
   return (
-    <>
+    <div className="flex flex-col min-h-screen">
       <Header />
-      <main className="container mx-auto max-w-4xl px-4 py-8">
+      <main className="flex-1 container mx-auto max-w-4xl px-4 py-8">
         <div className="mb-6">
           <Button variant="ghost" asChild>
             <Link href="/" className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -44,7 +45,7 @@ export default async function ProjectDetailsPage({ params }: { params: { id: str
                     <CardTitle className="text-3xl">{project.title}</CardTitle>
                     <CardDescription className="flex items-center gap-2 pt-1">
                       <CalendarDays className="h-4 w-4" />
-                      <span>{project.domain} - {project.batchYear}</span>
+                      <span>by {project.authorName} • {project.domain} • Batch {project.batchYear}</span>
                     </CardDescription>
                   </div>
                    <ProjectInteractions project={project} />
@@ -85,7 +86,9 @@ export default async function ProjectDetailsPage({ params }: { params: { id: str
                             </Avatar>
                             <div className="text-sm">
                                 <div className="font-semibold group-hover:underline">{authorProfile.name}</div>
-                                <div className="text-xs text-muted-foreground">{authorProfile.domain}</div>
+                                <div className="text-xs text-muted-foreground">
+                                    {authorProfile.domain} • Batch {authorProfile.batchYear}
+                                </div>
                             </div>
                         </Link>
                     ) : (
@@ -123,6 +126,7 @@ export default async function ProjectDetailsPage({ params }: { params: { id: str
           </aside>
         </div>
       </main>
-    </>
+      <Footer />
+    </div>
   );
 }

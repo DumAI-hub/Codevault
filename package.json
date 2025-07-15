@@ -16,6 +16,9 @@
     "check-env": "node scripts/check-env.js",
     "vercel-cleanup": "node scripts/vercel-cleanup.js",
     "vercel-troubleshoot": "node scripts/vercel-troubleshoot.js",
+    "backfill-profiles": "node scripts/backfill-profiles.js",
+    "test-profiles": "node scripts/test-profile-creation.js",
+    "fix-profiles": "node scripts/fix-user-profiles.js",
     "prebuild:check": "npm run check-env",
     "predeploy": "npm run vercel-cleanup"
   },

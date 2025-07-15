@@ -27,7 +27,7 @@ import {
   type Profile,
 } from "@/lib/types";
 import { useRouter } from "next/navigation";
-import { getCurrentUserProfile } from "@/lib/actions";
+import { getCurrentUserProfile, createInitialUserProfile } from "@/lib/actions";
 
 interface AuthContextType {
   user: User | null;
@@ -39,16 +39,53 @@ interface AuthContextType {
   logout: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+interface AuthContextWithRefresh extends AuthContextType {
+  refreshProfile: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextWithRefresh | undefined>(undefined);
 
 const noOpPromise = () => Promise.resolve();
 
-async function fetchProfileData() {
+// Helper function to set authentication cookie
+async function setAuthCookie(idToken: string) {
+  try {
+    console.log(`Setting auth cookie with token (length: ${idToken.length})`);
+    const response = await fetch('/api/auth/set-cookie', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ idToken }),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to set auth cookie');
+    }
+    
+    const result = await response.json();
+    console.log('Auth cookie set successfully:', result);
+    return result;
+  } catch (error) {
+    console.error('Error setting auth cookie:', error);
+    throw error;
+  }
+}
+
+async function fetchProfileData(idToken?: string, retryCount = 0): Promise<Profile | null> {
     try {
-      const userProfile = await getCurrentUserProfile();
+      console.log(`Fetching profile data (attempt ${retryCount + 1})${idToken ? ' with token' : ' via cookie'}...`);
+      const userProfile = await getCurrentUserProfile(idToken);
+      console.log('Profile data fetched:', userProfile);
       return userProfile;
     } catch (error) {
       console.error("Failed to fetch user profile", error);
+      // Retry once if this is the first attempt and we get an auth error
+      if (retryCount === 0 && error instanceof Error && error.message.includes('auth')) {
+        console.log('Retrying profile fetch due to auth error...');
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+        return fetchProfileData(idToken, 1);
+      }
       return null;
     }
 }
@@ -68,12 +105,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const handleRedirect = async () => {
       try {
         setLoading(true);
+        if (!auth) return;
+        
         const result = await getRedirectResult(auth);
         if (result && result.user) {
+          console.log(`Google login successful for user: ${result.user.uid}`);
+          
+          // Ensure profile exists for Google login users
+          try {
+            const idToken = await result.user.getIdToken();
+            const profileResult = await createInitialUserProfile(idToken);
+            console.log("Profile creation result after Google login:", profileResult);
+          } catch (profileError) {
+            console.error("Failed to create profile after Google login:", profileError);
+          }
+          
           toast({
             title: "Logged In!",
             description: `Welcome back, ${result.user.displayName}!`,
           });
+          
           const userProfile = await fetchProfileData();
           if (!userProfile?.domain) {
             router.push("/profile?setup=true");
@@ -102,14 +153,74 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      console.log('Auth state changed:', { user: !!user, uid: user?.uid, email: user?.email });
       setLoading(true);
       if (user) {
+        console.log(`Setting user state for: ${user.uid}`);
         setUser(user);
-        const userProfile = await fetchProfileData();
+        
+        // Get ID token for immediate operations
+        const idToken = await user.getIdToken();
+        console.log(`Getting ID token for user ${user.uid}, token length: ${idToken.length}`);
+        
+        // Set the authentication cookie to sync client and server (for subsequent requests)
+        try {
+          await setAuthCookie(idToken);
+          console.log('Authentication cookie set successfully');
+        } catch (error) {
+          console.error('Failed to set authentication cookie:', error);
+        }
+        
+        // Fetch profile using the idToken directly (no cookie dependency)
+        let userProfile = await fetchProfileData(idToken);
+        console.log(`Profile fetch result for ${user.uid}:`, userProfile);
+        
+        // If no profile exists, create an initial one
+        if (!userProfile) {
+          console.log(`No profile found for user ${user.uid}, creating initial profile...`);
+          try {
+            const result = await createInitialUserProfile(idToken);
+            console.log("Initial profile creation result:", result);
+            
+            if (result.success) {
+              // Fetch the newly created profile using the same token
+              userProfile = await fetchProfileData(idToken);
+              console.log("Fetched new profile:", userProfile);
+            } else {
+              console.error("Failed to create initial profile:", result.error);
+              toast({
+                title: "Profile Setup Error",
+                description: "Could not create your profile. Please try refreshing the page.",
+                variant: "destructive",
+              });
+            }
+          } catch (error) {
+            console.error("Failed to create initial profile:", error);
+            toast({
+              title: "Profile Setup Error", 
+              description: "Could not create your profile. Please try refreshing the page.",
+              variant: "destructive",
+            });
+          }
+        }
+        
+        console.log(`Setting profile state for ${user.uid}:`, userProfile);
         setProfile(userProfile);
       } else {
+        console.log('User logged out, clearing state');
         setUser(null);
         setProfile(null);
+        
+        // Clear the authentication cookie
+        try {
+          await fetch('/api/auth/set-cookie', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idToken: null }),
+          });
+        } catch (error) {
+          console.error('Failed to clear auth cookie:', error);
+        }
       }
       setLoading(false);
     });
@@ -145,12 +256,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!auth) return;
     setLoading(true);
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      toast({
-        title: "Account Created!",
-        description: "You have successfully signed up.",
-      });
-      router.push("/profile?setup=true");
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      
+      // Create initial profile for the new user
+      console.log(`Creating initial profile for new user: ${userCredential.user.uid}`);
+      const idToken = await userCredential.user.getIdToken();
+      const result = await createInitialUserProfile(idToken);
+      
+      if (result.success) {
+        console.log("Initial profile created successfully");
+        toast({
+          title: "Account Created!",
+          description: "You have successfully signed up.",
+        });
+        router.push("/profile?setup=true");
+      } else {
+        console.error("Failed to create initial profile:", result.error);
+        toast({
+          title: "Account Created",
+          description: "Account created but profile setup failed. Please complete your profile.",
+          variant: "destructive",
+        });
+        router.push("/profile?setup=true");
+      }
     } catch (error) {
       const authError = error as AuthError;
       console.error("Error signing up: ", authError);
@@ -168,7 +296,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!auth) return;
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      
+      // Ensure profile exists for email login users
+      try {
+        const idToken = await userCredential.user.getIdToken();
+        const profileResult = await createInitialUserProfile(idToken);
+        console.log("Profile creation result after email login:", profileResult);
+      } catch (profileError) {
+        console.error("Failed to create profile after email login:", profileError);
+      }
+      
       toast({
         title: "Logged In!",
         description: `Welcome back!`,
@@ -211,6 +349,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+
+  // Manual profile refresh function
+  const refreshProfile = async () => {
+    if (!user) return;
+    setLoading(true);
+    try {
+      const idToken = await user.getIdToken();
+      const userProfile = await fetchProfileData(idToken);
+      setProfile(userProfile);
+    } catch (error) {
+      console.error('Failed to refresh profile:', error);
+    }
+    setLoading(false);
+  };
+
   const value = auth
     ? {
         user,
@@ -220,6 +373,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signupWithEmail,
         loginWithEmail,
         logout,
+        refreshProfile,
       }
     : {
         user: null,
@@ -229,6 +383,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signupWithEmail: noOpPromise,
         loginWithEmail: noOpPromise,
         logout: noOpPromise,
+        refreshProfile: async () => {},
       };
 
   return (

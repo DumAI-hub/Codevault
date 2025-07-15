@@ -2,6 +2,7 @@
 import { notFound } from "next/navigation";
 import { getProfileById } from "@/lib/actions";
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 import { UserProjects } from "@/components/UserProjects";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -26,9 +27,9 @@ export default async function UserProfilePage({ params }: { params: { id: string
   const tier = getReputationTier(profile.reputation || 0);
 
   return (
-    <>
+    <div className="flex flex-col min-h-screen">
       <Header />
-      <main className="container mx-auto max-w-4xl px-4 py-8">
+      <main className="flex-1 container mx-auto max-w-4xl px-4 py-8">
          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1 space-y-6">
                 <Card>
@@ -96,6 +97,7 @@ export default async function UserProfilePage({ params }: { params: { id: string
             </div>
          </div>
       </main>
-    </>
+      <Footer />
+    </div>
   );
 }

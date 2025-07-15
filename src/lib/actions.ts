@@ -1,4 +1,3 @@
-
 "use server";
 
 import { revalidatePath } from "next/cache";
@@ -13,15 +12,23 @@ import { projectSchema, profileSchema } from "./types";
 
 async function getAuthenticatedUser() {
     const adminApp = getFirebaseAdminApp();
-    if (!adminApp) return null;
+    if (!adminApp) {
+        console.log('Firebase admin app not available');
+        return null;
+    }
 
-    const idToken = cookies().get('idToken')?.value;
+    const cookieStore = await cookies();
+    const idToken = cookieStore.get('idToken')?.value;
+    console.log('Looking for auth cookie, found:', idToken ? `token present (${idToken.substring(0, 20)}...)` : 'no token');
+    
     if (!idToken) {
+        console.log('No authenticated user found - no idToken cookie');
         return null;
     }
 
     try {
         const decodedToken = await auth(adminApp).verifyIdToken(idToken);
+        console.log(`Successfully verified token for user: ${decodedToken.uid}`);
         return decodedToken;
     } catch (error) {
         console.error("Error verifying ID token:", error);
@@ -239,6 +246,52 @@ export async function getGithubSummary(githubLink: string) {
     }
 }
 
+export async function createInitialUserProfile(idToken: string) {
+    const adminApp = getFirebaseAdminApp();
+    if (!adminApp) {
+        console.error("Firebase admin app not initialized");
+        return { success: false, error: "Server configuration error." };
+    }
+    
+    try {
+        const decodedToken = await auth(adminApp).verifyIdToken(idToken);
+        if (!decodedToken) {
+            console.error("Invalid ID token provided");
+            return { success: false, error: "Authentication required." };
+        }
+        
+        const db = getFirestore(adminApp);
+        const userRef = db.collection("users").doc(decodedToken.uid);
+        
+        // Check if profile already exists
+        const existingProfile = await userRef.get();
+        if (existingProfile.exists) {
+            console.log(`Profile already exists for user ${decodedToken.uid}`);
+            return { success: true, message: "Profile already exists" };
+        }
+        
+        // Create initial profile with default values
+        const initialProfile: Profile = {
+            name: decodedToken.name || decodedToken.email?.split('@')[0] || 'User',
+            batchYear: new Date().getFullYear(),
+            domain: '',
+            about: '',
+            reputation: 0,
+            linkedinUrl: '',
+            githubUrl: '',
+            websiteUrl: '',
+        };
+        
+        await userRef.set(initialProfile);
+        console.log(`Initial profile created for user ${decodedToken.uid}:`, initialProfile);
+        
+        return { success: true, message: "Initial profile created" };
+    } catch (error) {
+        console.error("Error creating initial profile:", error);
+        return { success: false, error: "Failed to create initial profile." };
+    }
+}
+
 export async function updateUserProfile(data: Omit<Profile, 'reputation'>, idToken: string) {
     const adminApp = getFirebaseAdminApp();
      if (!adminApp) {
@@ -279,32 +332,56 @@ export async function updateUserProfile(data: Omit<Profile, 'reputation'>, idTok
     }
 }
 
-export async function getCurrentUserProfile(): Promise<Profile | null> {
-    const user = await getAuthenticatedUser();
-    if (!user) {
-        return null;
+export async function getCurrentUserProfile(idToken?: string): Promise<Profile | null> {
+    let user;
+    
+    if (idToken) {
+        // Use provided idToken directly (for immediate operations)
+        const adminApp = getFirebaseAdminApp();
+        if (!adminApp) {
+            console.log('Firebase admin app not available');
+            return null;
+        }
+        
+        try {
+            user = await auth(adminApp).verifyIdToken(idToken);
+            console.log(`Using provided token for user: ${user.uid}`);
+        } catch (error) {
+            console.error('Error verifying provided ID token:', error);
+            return null;
+        }
+    } else {
+        // Fall back to cookie-based auth (for server-side rendering)
+        user = await getAuthenticatedUser();
+        if (!user) {
+            console.log('No authenticated user found via cookie');
+            return null;
+        }
     }
 
     const adminApp = getFirebaseAdminApp();
-    if (!adminApp) return null;
-    const db = getFirestore(adminApp);
-    
-    const profileDoc = await db.collection("users").doc(user.uid).get();
-    
-    if (profileDoc.exists) {
-        return profileDoc.data() as Profile;
+    if (!adminApp) {
+        console.log('Firebase admin app not available');
+        return null;
     }
     
-    return {
-        name: user.name || "",
-        batchYear: new Date().getFullYear(),
-        domain: "",
-        about: "",
-        reputation: 0,
-        linkedinUrl: "",
-        githubUrl: "",
-        websiteUrl: "",
-    };
+    const db = getFirestore(adminApp);
+    
+    try {
+        const profileDoc = await db.collection("users").doc(user.uid).get();
+        
+        if (profileDoc.exists) {
+            const profileData = profileDoc.data() as Profile;
+            console.log(`Profile found for user ${user.uid}:`, profileData);
+            return profileData;
+        }
+        
+        console.log(`No profile document found for user ${user.uid}`);
+        return null;
+    } catch (error) {
+        console.error(`Error fetching profile for user ${user.uid}:`, error);
+        return null;
+    }
 }
 
 

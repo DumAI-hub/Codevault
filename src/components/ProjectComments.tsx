@@ -112,7 +112,7 @@ export function ProjectComments({ projectId }: ProjectCommentsProps) {
             <div className="flex justify-center py-4"><Loader2 className="h-6 w-6 animate-spin"/></div>
           ) : comments.length > 0 ? (
             comments.map((comment) => (
-              <div key={comment.id} className="flex items-start gap-4">
+              <div key={comment.id} className="flex items-start gap-4 p-4 rounded-lg bg-muted/30 border border-border/50">
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={comment.authorPhotoURL} />
                    <AvatarFallback><UserCircle className="h-4 w-4"/></AvatarFallback>
@@ -124,12 +124,14 @@ export function ProjectComments({ projectId }: ProjectCommentsProps) {
                       {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
                     </p>
                   </div>
-                  <p className="text-sm text-foreground/90">{comment.text}</p>
+                  <p className="text-sm text-foreground/90 mt-1">{comment.text}</p>
                 </div>
               </div>
             ))
           ) : (
-            <p className="text-sm text-muted-foreground text-center py-4">Be the first to comment.</p>
+            <div className="text-center py-8">
+              <p className="text-sm text-muted-foreground">Be the first to comment.</p>
+            </div>
           )}
         </div>
       </CardContent>

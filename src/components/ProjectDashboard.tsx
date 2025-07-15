@@ -60,15 +60,15 @@ export function ProjectDashboard({ initialProjects }: ProjectDashboardProps) {
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                <Card>
+                <Card className="card-hover transition-all duration-200">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Total Projects</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{projects.length}</div>
+                        <div className="text-2xl font-bold gradient-text">{projects.length}</div>
                     </CardContent>
                 </Card>
-                <Card>
+                <Card className="card-hover transition-all duration-200">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Unique Domains</CardTitle>
                     </CardHeader>
@@ -76,7 +76,7 @@ export function ProjectDashboard({ initialProjects }: ProjectDashboardProps) {
                         <div className="text-2xl font-bold text-green-600">{uniqueDomains.length - 1}</div>
                     </CardContent>
                 </Card>
-                <Card>
+                <Card className="card-hover transition-all duration-200">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Distinct Batch Years</CardTitle>
                     </CardHeader>
@@ -124,7 +124,7 @@ export function ProjectDashboard({ initialProjects }: ProjectDashboardProps) {
             </Card>
 
             <div>
-                <h2 className="text-2xl font-bold tracking-tight mb-4">Available Projects</h2>
+                <h2 className="text-2xl font-bold tracking-tight mb-4 gradient-text">Available Projects</h2>
                 {filteredProjects.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {filteredProjects.map((project) => (
@@ -132,7 +132,7 @@ export function ProjectDashboard({ initialProjects }: ProjectDashboardProps) {
                         ))}
                     </div>
                 ) : (
-                    <div className="text-center py-16 border-dashed border-2 rounded-lg bg-white">
+                    <div className="text-center py-16 border-dashed border-2 rounded-lg card-glass backdrop-blur-sm">
                         <h3 className="text-xl font-semibold">No Projects Found</h3>
                         <p className="text-muted-foreground mt-2">Try adjusting your search or filter criteria.</p>
                     </div>
