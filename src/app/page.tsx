@@ -56,26 +56,6 @@ export default async function Home() {
                     </Link>
                  </Button>
               </div>
-
-              {/* Stats */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-2xl mx-auto">
-                <div className="text-center">
-                  <div className="text-2xl md:text-3xl font-bold text-blue-600">{allProjects.length}+</div>
-                  <div className="text-sm text-muted-foreground">Projects</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl md:text-3xl font-bold text-purple-600">50+</div>
-                  <div className="text-sm text-muted-foreground">Students</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl md:text-3xl font-bold text-indigo-600">10+</div>
-                  <div className="text-sm text-muted-foreground">Colleges</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl md:text-3xl font-bold text-rose-600">95%</div>
-                  <div className="text-sm text-muted-foreground">Satisfaction</div>
-                </div>
-              </div>
            </div>
         </section>
 
