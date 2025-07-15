@@ -14,11 +14,11 @@ export function ProjectCard({ project }: ProjectCardProps) {
     const techStack = project.techStack.split(',').map(tech => tech.trim());
 
     return (
-        <Card className="flex flex-col h-full shadow-md hover:shadow-lg transition-shadow duration-300 bg-card">
-            <Link href={`/project/${project.id}`} className="block flex-grow hover:bg-muted/50 transition-colors duration-300 rounded-t-lg">
+        <Card className="flex flex-col h-full shadow-sm hover:shadow-xl transition-shadow duration-300 bg-white">
+            <Link href={`/project/${project.id}`} className="block flex-grow hover:bg-muted/30 transition-colors duration-300 rounded-t-lg">
                 <CardHeader>
                     <div className="flex justify-between items-start gap-2">
-                        <CardTitle className="flex-grow">{project.title}</CardTitle>
+                        <CardTitle className="flex-grow text-lg">{project.title}</CardTitle>
                         <div className="flex items-center gap-1.5 text-muted-foreground flex-shrink-0 pt-1">
                            <ThumbsUp className="h-4 w-4" />
                            <span className="text-sm font-semibold">{project.upvotes || 0}</span>
@@ -30,36 +30,39 @@ export function ProjectCard({ project }: ProjectCardProps) {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-muted-foreground text-sm mb-4 line-clamp-3">
+                    <p className="text-muted-foreground text-sm mb-4 line-clamp-3 h-[60px]">
                         {project.summary}
                     </p>
                     <div className="flex flex-wrap gap-2">
-                        {techStack.map((tech) => (
+                        {techStack.slice(0, 4).map((tech) => (
                             <Badge key={tech} variant="secondary">{tech}</Badge>
                         ))}
+                        {techStack.length > 4 && <Badge variant="outline">...</Badge>}
                     </div>
                 </CardContent>
             </Link>
-            <CardFooter className="flex-shrink-0">
-                <div className="flex w-full justify-start gap-2">
-                    {project.githubLink && (
-                        <Button variant="outline" size="sm" asChild>
-                            <a href={project.githubLink} target="_blank" rel="noopener noreferrer">
-                                <Github className="mr-2 h-4 w-4" />
-                                GitHub
-                            </a>
-                        </Button>
-                    )}
-                    {project.demoLink && (
-                        <Button variant="outline" size="sm" asChild>
-                            <a href={project.demoLink} target="_blank" rel="noopener noreferrer">
-                                <LinkIcon className="mr-2 h-4 w-4" />
-                                Demo
-                            </a>
-                        </Button>
-                    )}
-                </div>
-            </CardFooter>
+            {(project.githubLink || project.demoLink) && (
+                <CardFooter className="flex-shrink-0 bg-slate-50/50 border-t pt-4">
+                    <div className="flex w-full justify-start gap-2">
+                        {project.githubLink && (
+                            <Button variant="outline" size="sm" asChild>
+                                <a href={project.githubLink} target="_blank" rel="noopener noreferrer">
+                                    <Github className="mr-2 h-4 w-4" />
+                                    GitHub
+                                </a>
+                            </Button>
+                        )}
+                        {project.demoLink && (
+                            <Button variant="outline" size="sm" asChild>
+                                <a href={project.demoLink} target="_blank" rel="noopener noreferrer">
+                                    <LinkIcon className="mr-2 h-4 w-4" />
+                                    Demo
+                                </a>
+                            </Button>
+                        )}
+                    </div>
+                </CardFooter>
+            )}
         </Card>
     );
 }
