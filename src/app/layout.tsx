@@ -1,12 +1,14 @@
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import { Toaster } from "@/components/ui/toaster";
+import { AuthProvider } from "@/hooks/use-auth";
 
-import type {Metadata} from 'next';
-import './globals.css';
-import { Toaster } from "@/components/ui/toaster"
-import { AuthProvider } from '@/hooks/use-auth';
+const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
-  title: 'CodeVault: A Digital Archive for College Projects',
-  description: 'Showcase your work, get feedback, and explore projects from your peers.',
+  title: "CodeVault: A Digital Archive for College Projects",
+  description: "Showcase your work, get feedback, and explore projects from your peers.",
 };
 
 export default function RootLayout({
@@ -16,18 +18,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-      </head>
-      <body className="font-body antialiased h-full bg-background">
-          <AuthProvider>
-            <div className="min-h-screen flex flex-col">
-              {children}
-            </div>
-            <Toaster />
-          </AuthProvider>
+      <body className={`font-sans ${inter.variable} antialiased h-full bg-background`}>
+        <AuthProvider>
+          <div className="min-h-screen flex flex-col">
+            {children}
+          </div>
+          <Toaster />
+        </AuthProvider>
       </body>
     </html>
   );

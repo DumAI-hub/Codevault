@@ -49,7 +49,7 @@ export function SignupForm() {
     <div className="space-y-6">
         <Button 
             variant="outline" 
-            className="w-full"
+            className="w-full rounded-full"
             onClick={() => loginWithGoogle()}
             disabled={isFormPending}
         >
@@ -81,7 +81,7 @@ export function SignupForm() {
                 <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                    <Input type="email" placeholder="m@example.com" {...field} />
+                    <Input type="email" placeholder="m@example.com" {...field} className="rounded-full" />
                 </FormControl>
                 <FormMessage />
                 </FormItem>
@@ -94,7 +94,7 @@ export function SignupForm() {
                 <FormItem>
                 <FormLabel>Password</FormLabel>
                 <FormControl>
-                    <Input type="password" placeholder="********" {...field} />
+                    <Input type="password" placeholder="********" {...field} className="rounded-full" />
                 </FormControl>
                 <FormMessage />
                 </FormItem>
@@ -107,13 +107,13 @@ export function SignupForm() {
                 <FormItem>
                 <FormLabel>Confirm Password</FormLabel>
                 <FormControl>
-                    <Input type="password" placeholder="********" {...field} />
+                    <Input type="password" placeholder="********" {...field} className="rounded-full" />
                 </FormControl>
                 <FormMessage />
                 </FormItem>
             )}
             />
-            <Button type="submit" disabled={isFormPending} className="w-full">
+            <Button type="submit" disabled={isFormPending} className="w-full rounded-full bg-slate-900 text-white hover:bg-slate-800">
             {isFormPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isFormPending ? "Creating account..." : "Create Account"}
             </Button>
