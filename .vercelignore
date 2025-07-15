@@ -1,8 +1,11 @@
 # Firebase files (not needed for Vercel deployment)
 firebase.json
-.firebase/
-.firebaserc
+firebase.json.backup
 apphosting.yaml
+apphosting.yaml.backup
+.firebaserc
+.firebaserc.backup
+.firebase/
 
 # Development files
 .env.local
@@ -37,3 +40,7 @@ build/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Backup files
+*.backup
+*.bak

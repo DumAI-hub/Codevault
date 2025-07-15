@@ -25,7 +25,14 @@ const nextConfig: NextConfig = {
     ],
   },
   // Vercel-specific optimizations
-  serverExternalPackages: ['firebase-admin'],
+  serverExternalPackages: [
+    'firebase-admin',
+    'genkit',
+    '@genkit-ai/core',
+    '@genkit-ai/googleai',
+    '@opentelemetry/sdk-node',
+    'handlebars'
+  ],
   // Ensure proper routing for Vercel
   async rewrites() {
     return [];
@@ -36,8 +43,36 @@ const nextConfig: NextConfig = {
       config.externals = config.externals || [];
       config.externals.push({
         'firebase-admin': 'commonjs firebase-admin',
+        'genkit': 'commonjs genkit',
+        '@genkit-ai/core': 'commonjs @genkit-ai/core',
+        '@genkit-ai/googleai': 'commonjs @genkit-ai/googleai',
+        '@opentelemetry/sdk-node': 'commonjs @opentelemetry/sdk-node',
+        'handlebars': 'commonjs handlebars',
       });
     }
+
+    // Ignore problematic modules for client-side builds
+    config.resolve = config.resolve || {};
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      net: false,
+      tls: false,
+      crypto: false,
+      path: false,
+      os: false,
+      stream: false,
+      util: false,
+    };
+
+    // Handle problematic dynamic imports
+    config.module = config.module || {};
+    config.module.rules = config.module.rules || [];
+    config.module.rules.push({
+      test: /\.node$/,
+      use: 'node-loader',
+    });
+
     return config;
   },
 };
