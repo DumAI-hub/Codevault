@@ -5,8 +5,8 @@ import { Toaster } from "@/components/ui/toaster"
 import { AuthProvider } from '@/hooks/use-auth';
 
 export const metadata: Metadata = {
-  title: 'ExamHelper: AI-Powered Exam Preparation',
-  description: 'Your intelligent study companion powered by AI.',
+  title: 'CodeVault: A Digital Archive for College Projects',
+  description: 'Showcase your work, get feedback, and explore projects from your peers.',
 };
 
 export default function RootLayout({

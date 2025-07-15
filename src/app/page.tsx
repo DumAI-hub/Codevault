@@ -1,11 +1,16 @@
+
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, PlayCircle, Sparkles } from "lucide-react";
+import { ArrowRight, Code, Filter, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import Image from "next/image";
+import { getProjects } from "@/lib/actions";
+import { ProjectDashboard } from "@/components/ProjectDashboard";
 
 export default async function Home() {
+  const allProjects = await getProjects();
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
@@ -22,77 +27,68 @@ export default async function Home() {
           <div className="container relative z-10 mx-auto px-4 text-center">
             <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-semibold text-primary">
               <Sparkles className="h-4 w-4" />
-              AI-Powered Exam Preparation
+              A Digital Archive for College Projects
             </div>
             <h1 className="mt-6 text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl md:text-6xl">
-              Ace Your Exams with{" "}
+              Showcase Your Work with{" "}
               <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                ExamHelper
+                CodeVault
               </span>
             </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-600">
-              Your intelligent study companion powered by AI. Practice with adaptive questions, track your progress, and master any subject with personalized explanations.
+            <p className="mx-auto mt-6 max-w-3xl text-lg text-slate-600">
+              CodeVault serves as a digital archive for college projects. Students can upload project titles, descriptions, tech stacks, and links. The platform uses Gemini AI to generate short summaries, making it easier for others to explore and understand each project.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-4">
               <Button asChild size="lg" className="rounded-full bg-slate-900 text-white hover:bg-slate-800">
-                <Link href="/login">
-                  <PlayCircle className="mr-2" />
-                  Start Learning Free
-                </Link>
-              </Button>
-              <Button asChild size="lg" variant="outline" className="rounded-full">
-                <Link href="/login">
-                  Sign In <ArrowRight className="ml-2" />
+                <Link href="/submit">
+                  Submit a Project <ArrowRight className="ml-2" />
                 </Link>
               </Button>
             </div>
           </div>
         </section>
-        <section id="features" className="py-20 md:py-32 bg-white">
+
+        <section id="projects" className="py-20 md:py-32 bg-white">
           <div className="container mx-auto px-4">
-            <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900">Why ExamHelper Matters</h2>
+             <div className="text-center mb-16">
+              <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900">Explore Projects</h2>
               <p className="mt-4 max-w-2xl mx-auto text-lg text-slate-600">
-                We provide tools and features that help you study smarter, not harder.
+                Filter by tech stack, domain, or batch year to find relevant work from your peers.
               </p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <Card className="text-center">
-                <CardHeader>
-                  <CardTitle>Adaptive Questions</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-slate-600">Our AI generates questions that adapt to your skill level, ensuring you're always challenged.</p>
-                </CardContent>
-              </Card>
-               <Card className="text-center">
-                <CardHeader>
-                  <CardTitle>Progress Tracking</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-slate-600">Visualize your progress with detailed analytics and identify areas for improvement.</p>
-                </CardContent>
-              </Card>
-               <Card className="text-center">
-                <CardHeader>
-                  <CardTitle>Personalized Explanations</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-slate-600">Get instant, clear explanations for every question, generated by our advanced AI.</p>
-                </CardContent>
-              </Card>
-            </div>
+            <ProjectDashboard initialProjects={allProjects} />
           </div>
         </section>
+
         <section className="py-20 md:py-32">
             <div className="container mx-auto px-4">
                 <div className="grid md:grid-cols-2 gap-12 items-center">
                     <div>
-                        <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900">Powered by the latest AI technology</h2>
-                         <p className="mt-4 text-lg text-slate-600">ExamHelper leverages state-of-the-art AI models to provide you with a cutting-edge learning experience. From generating tailored content to providing insightful feedback, our technology is designed to help you succeed.</p>
-                         <Button asChild className="mt-6 rounded-full">
-                            <Link href="#">Learn More</Link>
-                         </Button>
+                        <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900">Powered by Gemini AI</h2>
+                         <p className="mt-4 text-lg text-slate-600">CodeVault leverages state-of-the-art AI to automatically generate concise, easy-to-read summaries for every project description. This helps everyone, from recruiters to fellow students, quickly grasp the essence of each project.</p>
+                         <div className="mt-8 space-y-4">
+                           <Card className="flex items-center p-4">
+                              <Code className="h-6 w-6 mr-4 text-primary"/>
+                              <div>
+                                <CardTitle className="text-base">Project Showcase</CardTitle>
+                                <CardDescription>A centralized platform to display and discover student projects.</CardDescription>
+                              </div>
+                           </Card>
+                            <Card className="flex items-center p-4">
+                              <Sparkles className="h-6 w-6 mr-4 text-primary"/>
+                              <div>
+                                <CardTitle className="text-base">AI-Powered Summaries</CardTitle>
+                                <CardDescription>Automatic summaries for every project for quick insights.</CardDescription>
+                              </div>
+                           </Card>
+                           <Card className="flex items-center p-4">
+                              <Filter className="h-6 w-6 mr-4 text-primary"/>
+                              <div>
+                                <CardTitle className="text-base">Advanced Filtering</CardTitle>
+                                <CardDescription>Easily find projects by domain, tech stack, or year.</CardDescription>
+                              </div>
+                           </Card>
+                         </div>
                     </div>
                      <div>
                         <Image src="https://placehold.co/600x400.png" alt="AI Technology" width={600} height={400} className="rounded-lg shadow-lg" data-ai-hint="technology abstract" />
@@ -103,7 +99,7 @@ export default async function Home() {
       </main>
       <footer className="py-8 bg-white border-t">
           <div className="container mx-auto px-4 text-center text-slate-500">
-              <p>&copy; {new Date().getFullYear()} ExamHelper. All rights reserved.</p>
+              <p>&copy; {new Date().getFullYear()} CodeVault. All rights reserved.</p>
           </div>
       </footer>
     </div>

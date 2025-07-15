@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { Loader2, UserCircle, ChevronDown } from "lucide-react";
+import { Loader2, UserCircle, ChevronDown, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -22,25 +22,23 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-2">
-          <h1 className="text-xl font-bold tracking-tight text-slate-900">ExamHelper</h1>
+          <h1 className="text-xl font-bold tracking-tight text-slate-900">CodeVault</h1>
         </Link>
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-700">
-           <Link href="#" className="hover:text-slate-900 transition-colors">Home</Link>
-            <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center gap-1 hover:text-slate-900 transition-colors">
-                Features <ChevronDown className="h-4 w-4" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                <DropdownMenuItem>Adaptive Questions</DropdownMenuItem>
-                <DropdownMenuItem>Progress Tracking</DropdownMenuItem>
-                <DropdownMenuItem>Personalized Explanations</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+           <Link href="/" className="hover:text-slate-900 transition-colors">Home</Link>
+           <Link href="/#projects" className="hover:text-slate-900 transition-colors">Projects</Link>
         </nav>
         <div className="flex items-center gap-2">
             {loading ? (
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             ) : user ? (
+              <>
+                <Button variant="ghost" asChild>
+                    <Link href="/submit">
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Submit Project
+                    </Link>
+                </Button>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                          <Button variant="ghost" className="relative h-8 w-8 rounded-full">
@@ -71,6 +69,7 @@ export function Header() {
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
+              </>
             ) : (
                 <>
                     <Button variant="ghost" asChild>
