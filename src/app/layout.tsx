@@ -5,8 +5,8 @@ import { Toaster } from "@/components/ui/toaster"
 import { AuthProvider } from '@/hooks/use-auth';
 
 export const metadata: Metadata = {
-  title: 'CodeVault: Student Project Archive',
-  description: 'A digital archive of college student projects.',
+  title: 'ExamHelper: AI-Powered Exam Preparation',
+  description: 'Your intelligent study companion powered by AI.',
 };
 
 export default function RootLayout({
@@ -19,11 +19,11 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased h-full bg-background">
           <AuthProvider>
-            <div className="min-h-screen">
+            <div className="min-h-screen flex flex-col">
               {children}
             </div>
             <Toaster />

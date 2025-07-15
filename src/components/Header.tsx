@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { Archive, Plus, User, LogOut, Loader2, UserCircle, Settings } from "lucide-react";
+import { Loader2, UserCircle, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -13,26 +13,31 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 
 export function Header() {
   const { user, profile, loading, logout } = useAuth();
   
   return (
-    <header className="border-b bg-card">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-2">
-          <Archive className="h-6 w-6 text-primary" />
-          <h1 className="text-xl font-bold tracking-tight">CodeVault</h1>
+          <h1 className="text-xl font-bold tracking-tight text-slate-900">ExamHelper</h1>
         </Link>
-        <div className="flex items-center gap-4">
-            <Button asChild>
-                <Link href="/submit">
-                    <Plus className="-ml-1 h-4 w-4" />
-                    Submit Project
-                </Link>
-            </Button>
-
+        <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-700">
+           <Link href="#" className="hover:text-slate-900 transition-colors">Home</Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center gap-1 hover:text-slate-900 transition-colors">
+                Features <ChevronDown className="h-4 w-4" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem>Adaptive Questions</DropdownMenuItem>
+                <DropdownMenuItem>Progress Tracking</DropdownMenuItem>
+                <DropdownMenuItem>Personalized Explanations</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+        </nav>
+        <div className="flex items-center gap-2">
             {loading ? (
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             ) : user ? (
@@ -57,24 +62,28 @@ export function Header() {
                         <DropdownMenuSeparator />
                         <DropdownMenuItem asChild>
                             <Link href="/profile">
-                                <Settings className="mr-2 h-4 w-4" />
                                 <span>Profile</span>
                             </Link>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={logout}>
-                            <LogOut className="mr-2 h-4 w-4" />
                             <span>Log out</span>
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             ) : (
-                <Button variant="outline" asChild>
-                    <Link href="/login">
-                        <User className="mr-2 h-4 w-4" />
-                        Login
-                    </Link>
-                </Button>
+                <>
+                    <Button variant="ghost" asChild>
+                        <Link href="/login">
+                            Login
+                        </Link>
+                    </Button>
+                    <Button asChild className="rounded-full bg-slate-900 text-white hover:bg-slate-800">
+                        <Link href="/signup">
+                            Sign Up
+                        </Link>
+                    </Button>
+                </>
             )}
         </div>
       </div>
