@@ -34,16 +34,21 @@ export default async function Home() {
                 Discover & Showcase Student Innovation
               </div>
 
-              <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tighter mb-8 leading-tight">
+              <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tighter mb-4 leading-tight">
                 Explore the Future at <br />
                 <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
                   CodeVault
                 </span>
               </h1>
+              <div className="flex justify-center mb-8">
+                <span className="text-sm md:text-base bg-gradient-to-r from-orange-500 to-red-500 text-white px-3 py-1 rounded-full shadow-lg">
+                  Beta Version
+                </span>
+              </div>
               
               <p className="max-w-3xl mx-auto text-lg md:text-xl text-muted-foreground mb-12 leading-relaxed">
-                The ultimate digital archive for student projects. Upload your work, get AI-powered insights, 
-                discover innovative solutions, and connect with talented peers from colleges worldwide.
+                Currently in beta - The ultimate digital archive for student projects. Upload your work, get AI-powered insights, 
+                discover innovative solutions, and connect with talented peers. Exciting new features like dissertation analysis and research suggestions coming soon!
               </p>
               
               <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-16">

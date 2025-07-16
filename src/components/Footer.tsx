@@ -22,7 +22,7 @@ export function Footer() {
                 Ready to Showcase Your Work?
               </h2>
               <p className="text-lg md:text-xl text-blue-100 mb-8">
-                Join hundreds of students who have shared their innovative projects with CodeVault's community.
+                Connect with fellow students and share your innovative projects with our community.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                 <Link
